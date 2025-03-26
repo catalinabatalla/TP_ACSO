@@ -52,6 +52,20 @@ void execute_instruction(Instruction ins);
 #define CBZ 0b10110100
 #define CBNZ 0b10110101
 
+
+
+
+uint32_t get_opcode(uint32_t instruction){
+    for (int i = 31; i >= 0; i--){
+        if ((instruction >> i) & 1){
+            return instruction >> i;     
+        }
+        else if ((instruction >> i) & 0x7FF){
+            return instruction >> i;
+        }
+    }
+}
+
 // Función para extraer el opcode de una instrucción
 Instruction decode_instruction(uint32_t instruction) {
     Instruction ins;
