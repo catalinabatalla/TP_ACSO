@@ -20,9 +20,15 @@ typedef struct {
     uint32_t opt;
 } Instruction;
 
+//Function prototypes
+Instruction decode_instruction(uint32_t instruction);
+void update_flags(uint32_t result);
+void process_instruction();
+void execute_instruction(Instruction ins);
+
 
 // Define las máscaras de los opcodes
-#define ADDS_extended 0b10001011000 //opcode del manual ACTUA COMO UNA MASCARANA 
+#define ADDS_extended 0b11010110001 //opcode del manual ACTUA COMO UNA MASCARANA 
 #define ADDS_inmediate 0b10010001
 #define SUBS_extended_register 0b11101011000 //cambio el 21 por 0
 #define SUBS_inmediate 0b11110001
@@ -88,26 +94,6 @@ void update_flags(uint32_t result) {
     NEXT_STATE.FLAG_N = (result < 0);
 }
 
-void process_instruction(){
-    Instruction ins;
-    //1. lee la instrucción de la memoria
-    uint32_t instruction = mem_read_32(CURRENT_STATE.PC);
-
-    //2. decodifica la instrucción
-    Instruction ins_dec = decode_instruction(instruction);
-
-    //3. muestro la instrucción decodificada
-    printf("PC: 0x%08x | Instrucción: 0x%08x | Opcode: 0x%03x\n",
-        CURRENT_STATE.PC, instruction, ins_dec.opcode);
-
-    //4. ejecuta la instrucción
-    execute_instruction(ins_dec);
-
-    if (RUN_BIT){ //no avanzar si se apretó HLT
-        //5. actualiza el estado
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
-    }
-}
 
 void execute_instruction(Instruction ins){
     switch(ins.opcode){
@@ -139,40 +125,29 @@ void execute_instruction(Instruction ins){
     }
 }
 
+void process_instruction(){
+    Instruction ins;
+    //1. lee la instrucción de la memoria
+    uint32_t instruction = mem_read_32(CURRENT_STATE.PC);
 
+    //2. decodifica la instrucción
+    Instruction ins_dec = decode_instruction(instruction);
 
+    //3. muestro la instrucción decodificada
+    printf("PC: 0x%08lx\n", CURRENT_STATE.PC);
+    printf("Instrucción: 0x%08x\n", instruction);
+    printf("Opcode: 0x%08x\n", ins_dec.opcode);
+    printf("Rd: 0x%08x\n", ins_dec.Rd);
+    printf("Rn: 0x%08x\n", ins_dec.Rn);
+    printf("Rm: 0x%08x\n", ins_dec.Rm);
+    printf("Ra: 0x%08x\n", ins_dec.Ra);
+    printf("Imm12: 0x%08x\n", ins_dec.imm12);
 
-/*
-    if (opcode == ADDS_extended){
+    //4. ejecuta la instrucción
+    execute_instruction(ins_dec);
 
-        //ACA HICE COMO TODO DETALLADO PARA EL ADDS_EXTENDED PERO COMO VI CASI TODOS SON IGUALES, MANTIENEN LA MISMA EXTRUCTURA MENOS POR UN PAR DE COSAS
-
-
-        uint32_t Xd = (instruction >> 0) & 0x1F;  //se obtiene de los bits 0 a 4, aparece dibujado es donde dice Rd
-        uint32_t Xn = (instruction >> 5) & 0x1F; //se obtiene de los bits 5 a 9, aparece dibujado es donde dice Rn
-        uint32_t Xm = (instruction >> 16) & 0x1F; // se obtiene e los bits 16 a 20, aparece dibujado es donde dice Rm
-        // 0x1F = 0b11111 (5 unos entonces es la mascara !!)
-        
-        uint32_t imm12 = (instruction >> 10) & 0xFFF; // se obtiene de los bits 10 a 21, mantiene los 12 bits inferiores (descarta el resto) necesita 12 -> 0xFFF = mascara de 12 bits
-        // 0xFFF = 0b111111111111 (12 unos entonces es la mascara !!)
-        uint32_t shift = (instruction >> 22) & 0x1; //arranca inmediatamente despues del imm12, o sea posicion 22 y es de 1 bit, como es en binario 0b0001 solo mantiene el bit original (o sea el 22)
-        
-        int64_t valor_imm = (shift == 1) ? (imm12 < 12) : imm12; //entonces si el shift es 1 entonces el valor inmediato es el valor de imm12 desplazado 12 bits a la derecha, sino es el valor de imm12
-        int64_t result = CURRENT_STATE.REGS[Xn] + CURRENT_STATE.REGS[Xm]; // el resultado tiene que estar en 64, hago entonces el regi
-        //arriba accedo a los valoreres que se almacenan en los registros Xn y Xm y los sumo
-
-        NEXT_STATE.REGS[Xd] = result; // Guardo el resultado en Xd , lo almacena para el prox ciclo de ejecucion
-        NEXT_STATE.FLAG_Z = (result == 0); // Si el resultado es 0, se activa la flag
-        NEXT_STATE.FLAG_N = (result < 0);  // Si el resultado es negativo, se activa
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4; // Como cada instrucción ocupa 4 bytes, entonces incrementamos el puntero a apuntar a la prox instrucción
-    //las opcodes van en bits (ya las tenemos asi del libro)
-    //para mascaras y valores grandes van en hexa
-    }
-
-    if(opcode == ADDS_inmediate){
-
+    if (RUN_BIT){ //no avanzar si se apretó HLT
+        //5. actualiza el estado
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     }
 }
-
-
-*/
