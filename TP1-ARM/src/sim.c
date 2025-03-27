@@ -181,7 +181,7 @@ void execute_instruction( uint32_t ins){
         case ADDS_inmediate:
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] + imm12; // realiza la suma de los registros Rn y el inmediato y lo guarda en Rd
             update_flags(NEXT_STATE.REGS[Rd]); // actualiza las flags con el resultado
-            if (shift == 1){
+            if (shift == 01){
                 imm12 = imm12 <<= 12;
             }
             break;
@@ -192,7 +192,7 @@ void execute_instruction( uint32_t ins){
         case SUBS_inmediate:
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] - imm12; // realiza la resta de los registros Rn y el inmediato y lo guarda en Rd
             update_flags(NEXT_STATE.REGS[Rd]); // actualiza las flags con el resultado
-            if (shift == 1){
+            if (shift == 01){
                 imm12 = imm12 <<= 12;
             }
             break;
@@ -205,8 +205,44 @@ void execute_instruction( uint32_t ins){
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] - CURRENT_STATE.REGS[Rm]; // realiza la resta de los registros Rn y Rm y lo guarda en Rd
             update_flags(NEXT_STATE.REGS[Rd]); // actualiza las flags con el resultado
             break;
-    }
+        case ANDS_shifted_register:
+            // Perform bitwise AND between Rn and Rm, store result in Rd
+            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] & CURRENT_STATE.REGS[Rm];
+            // Update flags based on the result
+            update_flags(NEXT_STATE.REGS[Rd]);
+            break;
+        case EOR_shifted_register:
+            // Perform bitwise XOR between Rn and Rm, store result in Rd
+            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] ^ CURRENT_STATE.REGS[Rm];
+           
+            break;
+        case ORR_shifted_register:
+            // Perform bitwise OR between Rn and Rm, store result in Rd
+            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] | CURRENT_STATE.REGS[Rm];
+            
+            break;
+
+            case B:
+            // Extract imm26 from the instruction
+            int32_t imm26 = (ins >> 0) & 0x03FFFFFF;
+            // Sign-extend imm26 to 28 bits
+            if (imm26 & 0x02000000) {
+                imm26 |= 0xFC000000;
+            }
+            // Calculate the target address
+            int32_t target_address = CURRENT_STATE.PC + (imm26 << 2);
+            // Update the program counter to the target address
+            NEXT_STATE.PC = target_address;
+            return; // Return early to avoid incrementing PC by 4
+       case BR:
+            // Set the PC to the address stored in the register Rn
+            NEXT_STATE.PC = CURRENT_STATE.REGS[Rn];
+            return; // Return early to avoid incrementing PC by 4   
+        }
+    
 }
+
+//Testear orr, B, BR,
 
 
 void process_instruction() {
