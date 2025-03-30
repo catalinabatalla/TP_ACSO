@@ -17,9 +17,9 @@
 #define ORR_shifted_register 0b10101010
 #define B 0b000101
 #define B_cond 0b01010100
-#define BR 0b1101011000011111000000 //raro
-#define LSL_immediate 0b110100110
-#define LSR_immediate 0b110100111 // cambio el ultimo bit para LSR
+#define BR 0b11010110000//raro
+#define LSL_immediate 0b1101001101
+#define LSR_immediate 0b1101001101 // cambio el ultimo bit para LSR
 #define STUR 0b11111000000
 #define STURB 0b00111000000
 #define STURH 0b01111000000
@@ -33,6 +33,10 @@
 #define CBZ 0b10110100
 #define CBNZ 0b10110101
 
+#define MEMORY_BASE 0x10000000 // Dirección base de memoria
+#define MEMORY_SIZE 0x00100000 // 1 MB
+
+uint8_t MEMORY[MEMORY_SIZE]; // Memoria de 1 MB 
 
 // Define una estructura para almacenar los opcodes y sus longitudes
 typedef struct {
@@ -56,10 +60,11 @@ void utils(uint32_t instruction, uint32_t *Rd, uint32_t *Rn, uint32_t *Rm,
 }
 
 
-void update_flags(uint32_t result) {
-    NEXT_STATE.FLAG_Z = (result == 0);
-    NEXT_STATE.FLAG_N = (result < 0);
+void update_flags(int64_t result) {
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
+    NEXT_STATE.FLAG_N = (result < 0) ? 1 : 0;
 }
+
 
 // Define un array con los opcodes conocidos
 OpcodeEntry opcode_dict[] = {
@@ -69,26 +74,30 @@ OpcodeEntry opcode_dict[] = {
     {SUBS_immediate, 8},
     {HLT, 11},
     {CMP_extended, 11},
+    {CMP_immediate, 8},
     {ANDS_shifted_register, 8},
     {EOR_shifted_register, 8},
     {ORR_shifted_register, 8},
     {B, 6},
+    {BR, 11},
     {B_cond, 8},
     {LDURB, 11},
     {MOVZ, 9},
     {ADD_extended, 11},
+    {ADD_immediate, 8},
     {LSL_immediate, 10},
     {LSR_immediate, 10},
     {STUR, 11},
     {STURB, 11},
     {STURH, 11},
     {LDUR, 11},
+    {LDURH, 11},
+    {LDURB, 11},
     {MUL, 11},
     {CBZ, 8},
     {CBNZ, 8}
 };
 const int opcode_dict_size = sizeof(opcode_dict) / sizeof(opcode_dict[0]);
-
 
 
 uint32_t get_opcode(uint32_t instruction){
@@ -170,21 +179,11 @@ void execute_instruction( uint32_t ins){
 
     
     if (Rd >= 32 || Rn >= 32 || Rm >= 32) {
-        printf("Error: Registro fuera de rango (Rd: %u, Rn: %u, Rm: %u)\n", Rd, Rn, Rm);
+        printf("Error: Registro fuera de rango (Rd: %u, Rn: %u, Rm: %u) ❌\n", Rd, Rn, Rm);
         return;
     }
     else{
-        printf("Registros dentro de rango\n");
-    }
-
-    if (opcode ==LSL_immediate){
-        if(imms != 0b111111 && (imms + 1) == immr){
-            opcode = LSR_immediate;
-            printf("LSR_immediate\n");
-        }
-        else{
-            printf("LSL_immediate\n");
-        }
+        printf("Registros dentro de rango ✅\n");
     }
 
     switch(opcode){
@@ -200,10 +199,10 @@ void execute_instruction( uint32_t ins){
             }
             break;
         case SUBS_extended_register:
-            if (Rd == 31){ //si Rd es igual a XZR, es el caso de CMP
-                update_flags(CURRENT_STATE.REGS[Rn] - CURRENT_STATE.REGS[Rm]); // actualiza las flags con el resultado
-                break;
+            if (Rd == 31) { // si Rd es XZR, es CMP
+                update_flags(CURRENT_STATE.REGS[Rn] - CURRENT_STATE.REGS[Rm]); // actualiza flags
             }
+        
             else{
                 NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] - CURRENT_STATE.REGS[Rm]; // realiza la resta de los registros Rn y Rm y lo guarda en Rd
                 update_flags(NEXT_STATE.REGS[Rd]); // actualiza las flags con el resultado
@@ -211,6 +210,7 @@ void execute_instruction( uint32_t ins){
             }
         case SUBS_immediate:
             if(Rd == 31){ //CMP imm
+                printf("CMP immediate\n");
                 update_flags(CURRENT_STATE.REGS[Rn] - imm12); // actualiza las flags con el resultado
                 break;
             }
@@ -300,11 +300,17 @@ void execute_instruction( uint32_t ins){
                     break;
             }
         case LSL_immediate:
-            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] << imms;
-            break;  
-        case LSR_immediate:
-            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] >> imms;
+            if (imms == 0b111111 && (imms + 1) == immr && immr <= 63) {  //ESTO ES LSR
+                opcode = LSR_immediate;
+                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] >> immr;
+            }
+            else { // ESTO ES LSL
+                printf("LSL: Antes X%d = 0x%lx\n", Rd, CURRENT_STATE.REGS[Rn]);
+                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] << immr;
+                printf("LSL: Después X%d = 0x%lx\n", Rd, NEXT_STATE.REGS[Rd]);
+            }
             break;
+            
         case MUL:
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] * CURRENT_STATE.REGS[Rm];
             break;
@@ -318,43 +324,94 @@ void execute_instruction( uint32_t ins){
             }
 
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] + imm12;
+            break;
         case MOVZ:
             uint32_t imm16 = (ins >> 5) & 0xFFFF;
-            NEXT_STATE.REGS[Rd] = imm16; // Mover el inmediato al registro
+            uint32_t lsl = (ins >> 21) & 0x3; // Extraer el valor de desplazamiento LSL
+            NEXT_STATE.REGS[Rd] = imm16 << (lsl* 16); // Mover el inmediato al registro
             printf("MOVZ: Moved %u to X%u\n", imm16, Rd);
-        case LDUR:
-            // Cargar un valor de memoria en el registro Rd
-            uint64_t addr = CURRENT_STATE.REGS[Rn] + imm12;
-            if (addr < 0x10000000) {
-                printf("LDUR: dirección fuera de la memoria (0x%lx)\n", addr); //medio que le copie a ilan lol
-                break;
-            }
-            uint64_t val = 0;
-            val |= mem_read_32(addr); // Leer 4 bytes de memoria
-            val |= ((uint64_t)mem_read_32(addr + 4)) << 32; // Leer otros 4 bytes de memoria y desplazarlos 32 bits a la izquierda
-            NEXT_STATE.REGS[Rd] = val; // Almacenar el valor en el registro Rd
             break;
+        case LDUR:
+            printf("current state: %lx\n", CURRENT_STATE.REGS[Rn]);
+            printf("imm12: %x\n", imm12);
+            printf("rn: %x\n", Rn);
+            uint64_t add = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
+            if (add < MEMORY_BASE){
+                printf("Error: LDUR fuera de rango (0x%lx)❌ \n", add);
+                break;
+            } 
+            uint64_t value_ = 0;
+            value_ |= mem_read_32(add); // Leer 4 bytes de memoria
+            value_ |= (uint64_t)mem_read_32(add + 4) << 32; // Leer 4 bytes de memoria y desplazar 32 bits a la izquierda
+            NEXT_STATE.REGS[Rd] = value_; // Almacenar el valor en el registro Rd
+            break;
+
+        case LDURB:
+            uint64_t addr_b = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
+            if (addr_b < MEMORY_BASE){
+                printf("Error: LDURB fuera de rango (0x%lx)❌ \n", addr_b);
+                break;
+            } 
+            uint32_t value_b = mem_read_32(addr_b); // Leer 1 byte de memoria
+            uint64_t byte = value_b & 0xFF; // Agarro primeros 8 bits
+            NEXT_STATE.REGS[Rd] = byte; // Almacenar el valor en el registro Rd
+            break;
+
+        case LDURH:
+        //ACA DSP DE HACER MEM READ TE DEVUELVE DE 32 BITS, PERO SOLO LEEMOS 2
+            uint64_t addr_h = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
+            if (addr_h < MEMORY_BASE){
+                printf("Error: LDURH fuera de rango (0x%lx)❌ \n", addr_h);
+                break;
+            } 
+            uint32_t value_h = mem_read_32(addr_h); // Leer 2 bytes de memoria
+            uint16_t half_word = value_h & 0xFFFF; // Agarro primeros 16 bits
+            NEXT_STATE.REGS[Rd] = half_word; // Almacenar el valor en el registro Rd
+            break;
+
         case CBZ:
-            
-            if(CURRENT_STATE.REGS[Rt] == 0){
-
+            if (CURRENT_STATE.REGS[Rd] == 0) {
+                // Si el registro Rd es cero, saltar a la dirección especificada por el inmediato
+                int32_t offset = (ins >> 5) & 0xFFFFFF; // Extraer el desplazamiento de 24 bits
+                NEXT_STATE.PC = CURRENT_STATE.PC + (offset << 2); // Actualizar la PC
             }
+            break;
+        case CBNZ:
+            if (CURRENT_STATE.REGS[Rd] != 0) {
+                // Si el registro Rd no es cero, saltar a la dirección especificada por el inmediato
+                int32_t offset = (ins >> 5) & 0xFFFFFF; // Extraer el desplazamiento de 24 bits
+                NEXT_STATE.PC = CURRENT_STATE.PC + (offset << 2); // Actualizar la PC
+            }
+            break;
+        case STUR:
+            uint64_t addr = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
+            uint64_t val = CURRENT_STATE.REGS[Rd]; // Obtener el valor del registro Rd
 
+            mem_write_32(addr, val & 0xFFFFFFFF); // Escribir el valor en la memoria
+            mem_write_32(addr + 4, (val >> 32) & 0xFFFFFFFF); // Escribir los siguientes 4 bytes en la memoria
+            break;
 
+        case STURB:
+            uint64_t addr_sturb = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
+            uint8_t val_b = CURRENT_STATE.REGS[Rd] & 0xFF; // Obtener el valor del registro Rd (8 bits)
+            mem_write_32(addr_sturb, val_b); // Escribir el valor en la memoria
+            break;
 
-        }
-
+        case STURH:
+            uint64_t sturh = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
+            uint16_t val_h = CURRENT_STATE.REGS[Rd] & 0xFFFF; // Obtener el valor del registro Rd (16 bits)
+            mem_write_32(addr_h, val_h); // Escribir el valor en la memoria
+            break;
+        }     
 }
-
-//Testear orr, B, BR,LSL,LSR,MUL,LDUR
-
-//Faltan hacer las de memoria o labls: STUR, STURB, STURH, LDURH, LDURB,  MUL, CBZ, CBNZ
 
 
 void process_instruction() {
     uint32_t instruction = mem_read_32(CURRENT_STATE.PC);
     uint32_t opcode = get_opcode(instruction);
+    printf("--------- \n");
     printf("instruction: %x\n", instruction);
+    printf("---------- \n");
     printf("identificador: %s\n", identify_instruction(instruction));
     identify_instruction(opcode);
     execute_instruction(instruction);
