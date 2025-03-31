@@ -17,9 +17,9 @@
 #define ORR_shifted_register 0b10101010
 #define B 0b000101
 #define B_cond 0b01010100
-#define BR 0b11010110000//raro
+#define BR 0b1101011000011111000000
 #define LSL_immediate 0b1101001101
-#define LSR_immediate 0b1101001101 // cambio el ultimo bit para LSR
+#define LSR_immediate 0b1101001101 
 #define STUR 0b11111000000
 #define STURB 0b00111000000
 #define STURH 0b01111000000
@@ -27,7 +27,7 @@
 #define LDURH 0b01111000010
 #define LDURB 0b00111000010
 #define MOVZ 0b110100101
-#define ADD_extended 0b10001011001
+#define ADD_extended 0b10001011000 
 #define ADD_immediate 0b10010001
 #define MUL 0b10011011000
 #define CBZ 0b10110100
@@ -41,7 +41,7 @@ uint8_t MEMORY[MEMORY_SIZE]; // Memoria de 1 MB
 // Define una estructura para almacenar los opcodes y sus longitudes
 typedef struct {
     uint32_t opcode;
-    int length; // Longitud en bits del opcode
+    int length; 
 } OpcodeEntry;
 
 void utils(uint32_t instruction, uint32_t *Rd, uint32_t *Rn, uint32_t *Rm, 
@@ -61,8 +61,24 @@ void utils(uint32_t instruction, uint32_t *Rd, uint32_t *Rn, uint32_t *Rm,
 
 
 void update_flags(int64_t result) {
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
-    NEXT_STATE.FLAG_N = (result < 0) ? 1 : 0;
+    NEXT_STATE.FLAG_Z = 0;
+    NEXT_STATE.FLAG_N = 0;
+
+    if (result == 0) {
+        NEXT_STATE.FLAG_Z = 1; 
+        printf("Z flag set\n");
+    } else {
+        NEXT_STATE.FLAG_Z = 0; 
+        printf("Z flag clear\n");
+    }
+
+    if (result < 0) {
+        NEXT_STATE.FLAG_N = 1; 
+        printf("N flag set\n");
+    } else {
+        NEXT_STATE.FLAG_N = 0; 
+        printf("N flag clear\n");
+    }
 }
 
 
@@ -79,7 +95,7 @@ OpcodeEntry opcode_dict[] = {
     {EOR_shifted_register, 8},
     {ORR_shifted_register, 8},
     {B, 6},
-    {BR, 11},
+    {BR, 22}, 
     {B_cond, 8},
     {LDURB, 11},
     {MOVZ, 9},
@@ -99,11 +115,10 @@ OpcodeEntry opcode_dict[] = {
 };
 const int opcode_dict_size = sizeof(opcode_dict) / sizeof(opcode_dict[0]);
 
-
+//Funcion para obtener el opcode mediante el uso de un diccionario
 uint32_t get_opcode(uint32_t instruction){
     
     for(int i = 0; i < opcode_dict_size; i++){
-        // uint32_t mask = (1 << opcode_dict[i].length) - 1;
         uint32_t extracted_opcode = instruction >> (32 - opcode_dict[i].length);
         if(extracted_opcode == opcode_dict[i].opcode){
             return opcode_dict[i].opcode;
@@ -136,6 +151,8 @@ const char* identify_instruction(uint32_t instruction) {
         return "ORR_shifted_register";
     } else if (opcode == B) {
         return "B";
+    } else if (opcode == BR) {
+        return "BR";
     } else if (opcode == B_cond) {
         return "B_cond";
     } else if (opcode == LDURB) {
@@ -167,13 +184,17 @@ const char* identify_instruction(uint32_t instruction) {
     }
 }
 
+int64_t sign_extend(int64_t value, int bits) {
+    int64_t mask = 1LL << (bits - 1);
+    return (value ^ mask) - mask;
+}
 
 void execute_instruction( uint32_t ins){
     uint32_t opcode = get_opcode(ins);
     uint32_t Rd, Rn, Rm, Ra, Rt, shift, immr, cond, opt, imms;
     utils(ins, &Rd, &Rn, &Rm, &Ra, &Rt, &shift, &immr, &cond, &opt, &imms);
 
-    uint32_t imm12 = (ins >> 10) & 0xFFF;
+    uint32_t imm12 = (ins >> 10) & 0xFFF;  
     printf("Rd: %x\n", Rd);
     printf("Rn: %x\n", Rn);
 
@@ -185,38 +206,46 @@ void execute_instruction( uint32_t ins){
     else{
         printf("Registros dentro de rango ✅\n");
     }
+ //Itera sobre los opcodes conocidos, cuando hay match, ejecuta la instrucción correspondiente
 
     switch(opcode){
         case ADDS_extended:
-            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] + CURRENT_STATE.REGS[Rm]; // realiza la suma de los registros Rn y Rm y lo guarda en Rd
-            update_flags(NEXT_STATE.REGS[Rd]); // actualiza las flags con el resultado
+            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] + CURRENT_STATE.REGS[Rm]; 
+            printf("Next state: %lx\n", NEXT_STATE.REGS[Rd]);
+            update_flags(NEXT_STATE.REGS[Rd]); 
             break;
         case ADDS_immediate:
-            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] + imm12; // realiza la suma de los registros Rn y el inmediato y lo guarda en Rd
-            update_flags(NEXT_STATE.REGS[Rd]); // actualiza las flags con el resultado
+            NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] + imm12; 
+            printf("Next state: %lx\n", NEXT_STATE.REGS[Rd]);
+            update_flags(NEXT_STATE.REGS[Rd]); 
             if (shift == 1){
                 imm12 = imm12 <<= 12;
             }
             break;
         case SUBS_extended_register:
             if (Rd == 31) { // si Rd es XZR, es CMP
-                update_flags(CURRENT_STATE.REGS[Rn] - CURRENT_STATE.REGS[Rm]); // actualiza flags
+                printf("CMP extended register\n");
+                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] - CURRENT_STATE.REGS[Rm];
+                printf("curr: %lx\n", NEXT_STATE.REGS[Rd]);
+                update_flags(NEXT_STATE.REGS[Rd]); 
+                break;
             }
         
             else{
-                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] - CURRENT_STATE.REGS[Rm]; // realiza la resta de los registros Rn y Rm y lo guarda en Rd
-                update_flags(NEXT_STATE.REGS[Rd]); // actualiza las flags con el resultado
+                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] - CURRENT_STATE.REGS[Rm]; 
+                update_flags(NEXT_STATE.REGS[Rd]); 
                 break;
             }
         case SUBS_immediate:
             if(Rd == 31){ //CMP imm
                 printf("CMP immediate\n");
-                update_flags(CURRENT_STATE.REGS[Rn] - imm12); // actualiza las flags con el resultado
+                printf("curr: %lx\n", CURRENT_STATE.REGS[Rn] - imm12);
+                update_flags(CURRENT_STATE.REGS[Rn] - imm12); 
                 break;
             }
             else{ 
-                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] - imm12; // realiza la resta de los registros Rn y el inmediato y lo guarda en Rd
-                update_flags(NEXT_STATE.REGS[Rd]); // actualiza las flags con el resultado
+                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] - imm12; 
+                update_flags(NEXT_STATE.REGS[Rd]); 
                 if (shift == 1){
                     imm12 = imm12 <<= 12;
                 }
@@ -224,91 +253,106 @@ void execute_instruction( uint32_t ins){
             }
         case HLT:
             printf("Se detiene la ejecución\n");
-            RUN_BIT = 0; // apaga el bit de ejecución
+            RUN_BIT = 0;
             break;
         case ANDS_shifted_register:
-            // Perform bitwise AND between Rn and Rm, store result in Rd
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] & CURRENT_STATE.REGS[Rm];
-            // Update flags based on the result
             update_flags(NEXT_STATE.REGS[Rd]);
             break;
         case EOR_shifted_register:
-            // Perform bitwise XOR between Rn and Rm, store result in Rd
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] ^ CURRENT_STATE.REGS[Rm];
-           
             break;
         case ORR_shifted_register:
-            // Perform bitwise OR between Rn and Rm, store result in Rd
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] | CURRENT_STATE.REGS[Rm];
-            
             break;
 
         case B:
-            // Extract imm26 from the instruction
             int32_t imm26 = (ins >> 0) & 0x03FFFFFF;
-            // Sign-extend imm26 to 28 bits
             if (imm26 & 0x02000000) {
                 imm26 |= 0xFC000000;
             }
-            // Calculate the target address
             int32_t target_address = CURRENT_STATE.PC + (imm26 << 2);
-            // Update the program counter to the target address
             NEXT_STATE.PC = target_address;
-            return; // Return early to avoid incrementing PC by 4
+            break; 
         case BR:
-            // Set the PC to the address stored in the register Rn
             NEXT_STATE.PC = CURRENT_STATE.REGS[Rn];
-            return; // Return early to avoid incrementing PC by 4  
-        case B_cond:
-            int cond = Rd;
-            switch(cond){
-                case 0000: //EQ
-                    if(CURRENT_STATE.FLAG_Z == 1){
-                        NEXT_STATE.PC = CURRENT_STATE.PC + imm12;
-                        CURRENT_STATE.PC = NEXT_STATE.PC;
+            break; 
+        case B_cond: 
+            uint32_t imm19_bcond = (ins >> 5) & 0x7FFFF; 
+            int condition = cond; 
+        
+            int offset = sign_extend(imm19_bcond, 19) << 2; 
+
+        
+            switch (condition) {
+                case 0b0000: // EQ (Z == 1)
+                    if (CURRENT_STATE.FLAG_Z == 1){
+                        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+                        printf("nest stai pc: %lx\n", NEXT_STATE.PC);
+
+                    } else{
+                        NEXT_STATE.PC += 4;
                     }
                     break;
-                case 0001: //NE
-                    if(CURRENT_STATE.FLAG_Z == 0){
-                        NEXT_STATE.PC = CURRENT_STATE.PC + imm12;
-                        CURRENT_STATE.PC = NEXT_STATE.PC;
+                case 0b0001: // NE (Z == 0)
+                    if (CURRENT_STATE.FLAG_Z == 0){
+                        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+                        printf("nest stai pc: %lx\n", NEXT_STATE.PC);
+                    }else{
+                        NEXT_STATE.PC += 4;
                     }
                     break;
-                case 1100: //GT
-                    if(CURRENT_STATE.FLAG_Z == 0 && CURRENT_STATE.FLAG_N == 0){
-                        NEXT_STATE.PC = CURRENT_STATE.PC + imm12;
-                        CURRENT_STATE.PC = NEXT_STATE.PC;
+                case 0b1010: // GE (N == 0)
+                    if (CURRENT_STATE.FLAG_N == 0 || CURRENT_STATE.FLAG_Z == 1){
+                        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+                    }else{
+                        NEXT_STATE.PC += 4;
                     }
                     break;
-                case 1011: //LT
-                    if(CURRENT_STATE.FLAG_N != 0){
-                        NEXT_STATE.PC = CURRENT_STATE.PC + imm12;
-                        CURRENT_STATE.PC = NEXT_STATE.PC;
+                case 0b1011: // LT (N == 1)
+                    if (CURRENT_STATE.FLAG_N == 1 && CURRENT_STATE.FLAG_Z == 0){
+                        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+                        printf("nest stai pc: %lx\n", NEXT_STATE.PC);
+                    }else{
+                        NEXT_STATE.PC += 4;
                     }
                     break;
-                case 1010: //GE, asumo que el FLAG_v = 0
-                    if(CURRENT_STATE.FLAG_N == 0){
-                        NEXT_STATE.PC = CURRENT_STATE.PC + imm12;
-                        CURRENT_STATE.PC = NEXT_STATE.PC;
+                case 0b1100: // GT (Z == 0 && N == 0)
+                    if (CURRENT_STATE.FLAG_Z == 0 && CURRENT_STATE.FLAG_N == 0){
+                        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+                        printf("nest stai pc: %lx\n", NEXT_STATE.PC);
+                    }else{
+                        NEXT_STATE.PC += 4;
                     }
                     break;
-                case 1101: //LE
-                    if(CURRENT_STATE.FLAG_Z != 0 || CURRENT_STATE.FLAG_N != 0){
-                        NEXT_STATE.PC = CURRENT_STATE.PC + imm12;
-                        CURRENT_STATE.PC = NEXT_STATE.PC;
+                case 0b1101: // LE (Z == 1 || N == 1)
+                    if (CURRENT_STATE.FLAG_Z == 1 || CURRENT_STATE.FLAG_N == 1){
+                        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+                        printf("nest stai pc: %lx\n", NEXT_STATE.PC);
+                    }else{
+                        NEXT_STATE.PC += 4;
                     }
+                    break;
+                default:
+                    NEXT_STATE.PC += 4;
                     break;
             }
         case LSL_immediate:
-            if (imms == 0b111111 && (imms + 1) == immr && immr <= 63) {  //ESTO ES LSR
-                opcode = LSR_immediate;
-                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] >> immr;
+            uint32_t immr = (ins >> 16) & 0x3F;
+            uint32_t imms = (ins >> 10) & 0x3F;  
+            imm12 = (imm12 <<= 12);
+            if (imms != 0b111111 && (imms + 1) == immr) {  // Este es el caso de LSL
+                opcode = LSL_immediate;
+                imm12 = 64 - immr;
+                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] << imm12;
+                
             }
-            else { // ESTO ES LSL
-                printf("LSL: Antes X%d = 0x%lx\n", Rd, CURRENT_STATE.REGS[Rn]);
-                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] << immr;
-                printf("LSL: Después X%d = 0x%lx\n", Rd, NEXT_STATE.REGS[Rd]);
+            else{
+                opcode =LSR_immediate; // Este es el caso de LSR
+                imm12 = (ins >> 16) & 0x3F;
+                NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] >> imm12;
             }
+            
             break;
             
         case MUL:
@@ -318,90 +362,155 @@ void execute_instruction( uint32_t ins){
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] + CURRENT_STATE.REGS[Rm];
             break;
         case ADD_immediate:
-            // Manejo del inmediato
-            if (shift == 01) { // Si shift es 01, desplazar el inmediato 12 bits a la izquierda
-                imm12 <<= 12; // Desplazar 12 bits a la izquierda
+            if (shift == 01) {
+                imm12 <<= 12; 
             }
 
             NEXT_STATE.REGS[Rd] = CURRENT_STATE.REGS[Rn] + imm12;
             break;
         case MOVZ:
             uint32_t imm16 = (ins >> 5) & 0xFFFF;
-            uint32_t lsl = (ins >> 21) & 0x3; // Extraer el valor de desplazamiento LSL
-            NEXT_STATE.REGS[Rd] = imm16 << (lsl* 16); // Mover el inmediato al registro
+            uint32_t lsl = (ins >> 21) & 0x3; 
+            NEXT_STATE.REGS[Rd] = imm16 << (lsl* 16);
             printf("MOVZ: Moved %u to X%u\n", imm16, Rd);
             break;
         case LDUR:
             printf("current state: %lx\n", CURRENT_STATE.REGS[Rn]);
             printf("imm12: %x\n", imm12);
             printf("rn: %x\n", Rn);
-            uint64_t add = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
-            if (add < MEMORY_BASE){
-                printf("Error: LDUR fuera de rango (0x%lx)❌ \n", add);
-                break;
-            } 
-            uint64_t value_ = 0;
-            value_ |= mem_read_32(add); // Leer 4 bytes de memoria
-            value_ |= (uint64_t)mem_read_32(add + 4) << 32; // Leer 4 bytes de memoria y desplazar 32 bits a la izquierda
-            NEXT_STATE.REGS[Rd] = value_; // Almacenar el valor en el registro Rd
+
+            int16_t imm9_ldur = (ins >> 12) & 0b111111111; 
+            uint64_t offset_ldur = sign_extend(imm9_ldur, 9); 
+            uint64_t add = CURRENT_STATE.REGS[Rn] + offset_ldur; 
+
+            uint32_t value_1 = mem_read_32(add);
+            uint32_t value_2 = mem_read_32(add + 4); 
+
+            uint64_t value_ldur = value_1 | ((uint64_t)value_2 << 32); 
+            NEXT_STATE.REGS[Rt] = value_ldur; 
             break;
 
         case LDURB:
-            uint64_t addr_b = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
-            if (addr_b < MEMORY_BASE){
-                printf("Error: LDURB fuera de rango (0x%lx)❌ \n", addr_b);
-                break;
-            } 
-            uint32_t value_b = mem_read_32(addr_b); // Leer 1 byte de memoria
-            uint64_t byte = value_b & 0xFF; // Agarro primeros 8 bits
-            NEXT_STATE.REGS[Rd] = byte; // Almacenar el valor en el registro Rd
+
+            int16_t imm9_ldurb = (ins >> 12) & 0b111111111; 
+            uint64_t offset_ldurb = sign_extend(imm9_ldurb, 9); 
+            uint64_t add_ldurb = CURRENT_STATE.REGS[Rn] + offset_ldurb; 
+
+            uint64_t read_ldurb = mem_read_32(add_ldurb); 
+            uint8_t value_ldurb = read_ldurb & 0b11111111; 
+
+            NEXT_STATE.REGS[Rt] = value_ldurb;
             break;
 
+
         case LDURH:
-        //ACA DSP DE HACER MEM READ TE DEVUELVE DE 32 BITS, PERO SOLO LEEMOS 2
-            uint64_t addr_h = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
-            if (addr_h < MEMORY_BASE){
-                printf("Error: LDURH fuera de rango (0x%lx)❌ \n", addr_h);
-                break;
-            } 
-            uint32_t value_h = mem_read_32(addr_h); // Leer 2 bytes de memoria
-            uint16_t half_word = value_h & 0xFFFF; // Agarro primeros 16 bits
-            NEXT_STATE.REGS[Rd] = half_word; // Almacenar el valor en el registro Rd
+            int16_t imm9_ldurh = (ins >> 12) & 0b111111111; 
+            uint64_t offset_ldurh = sign_extend(imm9_ldurh, 9); 
+            uint64_t add_ldurh = CURRENT_STATE.REGS[Rn] + offset_ldurh; 
+
+            uint64_t read_ldurh = mem_read_32(add_ldurh); 
+            uint8_t value_ldurh = read_ldurh & 0b1111111111111111;
+
+            NEXT_STATE.REGS[Rt] = value_ldurh; 
             break;
 
         case CBZ:
             if (CURRENT_STATE.REGS[Rd] == 0) {
-                // Si el registro Rd es cero, saltar a la dirección especificada por el inmediato
-                int32_t offset = (ins >> 5) & 0xFFFFFF; // Extraer el desplazamiento de 24 bits
-                NEXT_STATE.PC = CURRENT_STATE.PC + (offset << 2); // Actualizar la PC
+                int64_t imm;
+                int32_t imm19 = (ins >> 5) & 0b1111111111111111111;  
+                imm = ((int32_t)(imm19 << 13)) >>11;
+
+                NEXT_STATE.PC = CURRENT_STATE.PC + imm;
+            
+            } 
+            else {
+                NEXT_STATE.PC = CURRENT_STATE.PC + 4;
             }
             break;
         case CBNZ:
             if (CURRENT_STATE.REGS[Rd] != 0) {
-                // Si el registro Rd no es cero, saltar a la dirección especificada por el inmediato
-                int32_t offset = (ins >> 5) & 0xFFFFFF; // Extraer el desplazamiento de 24 bits
-                NEXT_STATE.PC = CURRENT_STATE.PC + (offset << 2); // Actualizar la PC
+
+
+                int64_t imm;
+                int32_t imm19 = (ins >> 5) & 0b1111111111111111111;    
+                imm = ((int32_t)(imm19 << 13)) >>11;
+                NEXT_STATE.PC = CURRENT_STATE.PC + imm;
+            
+             
+            }
+            else {
+                NEXT_STATE.PC = CURRENT_STATE.PC + 4;
             }
             break;
         case STUR:
-            uint64_t addr = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
-            uint64_t val = CURRENT_STATE.REGS[Rd]; // Obtener el valor del registro Rd
 
-            mem_write_32(addr, val & 0xFFFFFFFF); // Escribir el valor en la memoria
-            mem_write_32(addr + 4, (val >> 32) & 0xFFFFFFFF); // Escribir los siguientes 4 bytes en la memoria
+            uint16_t imm9_stur = (ins >> 12) & 0b111111111; 
+            uint64_t offset___ = sign_extend(imm9_stur, 9); 
+            uint64_t addr_stur = CURRENT_STATE.REGS[Rn] + offset___; 
+            uint64_t val_stur = CURRENT_STATE.REGS[Rt]; 
+
+            mem_write_32(addr_stur, val_stur & 0b11111111111111111111111111111111); 
+            mem_write_32(addr_stur + 4, (val_stur >> 32));
+            
             break;
 
         case STURB:
-            uint64_t addr_sturb = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
-            uint8_t val_b = CURRENT_STATE.REGS[Rd] & 0xFF; // Obtener el valor del registro Rd (8 bits)
-            mem_write_32(addr_sturb, val_b); // Escribir el valor en la memoria
+            uint16_t imm9 = (ins >> 12) & 0b111111111; 
+            uint64_t offset_ = sign_extend(imm9, 9); 
+            uint64_t addr_sturb = CURRENT_STATE.REGS[Rn] + offset_; 
+            uint64_t val_b = CURRENT_STATE.REGS[Rt]; 
+            
+            uint64_t adress_aligned = addr_sturb & ~0b11; 
+
+            uint64_t byte_position = addr_sturb & 0b11; 
+            uint32_t word = mem_read_32(adress_aligned); 
+
+            uint8_t value_sturb = val_b & 0b11111111;
+            uint32_t mask = ~(0b11111111 << (byte_position * 8));
+            uint32_t palabrita = (word & mask)|(value_sturb << (byte_position*8));
+            mem_write_32(adress_aligned, palabrita); 
             break;
 
         case STURH:
-            uint64_t sturh = CURRENT_STATE.REGS[Rn] + imm12; // Sumar el registro Rn con el inmediato
-            uint16_t val_h = CURRENT_STATE.REGS[Rd] & 0xFFFF; // Obtener el valor del registro Rd (16 bits)
-            mem_write_32(addr_h, val_h); // Escribir el valor en la memoria
-            break;
+            uint32_t Rd_sturh = (ins >> 0) & 0x1F; 
+            uint32_t Rn_sturh = (ins >> 5) & 0x1F; 
+
+
+            uint16_t imm9_sturh = (ins >> 12) & 0b111111111; 
+            uint64_t offset__ = sign_extend(imm9_sturh, 9); 
+            uint64_t addr_sturh = CURRENT_STATE.REGS[Rn_sturh] + offset__; 
+            uint64_t val_h = CURRENT_STATE.REGS[Rd_sturh] & 0b1111111111111111; 
+
+            uint64_t adress_aligned_sturh = addr_sturh & ~0b11; 
+
+            uint64_t byte_position_sturh = addr_sturh & 0b11; 
+            uint32_t word_h = mem_read_32(adress_aligned_sturh) ; 
+
+            if(byte_position_sturh == 3){
+                uint64_t mask_sturh = ~(0b11111111 << 24);
+                uint8_t value_sturh = (val_h & 0b11111111) << 24 ;
+                
+                uint32_t palabrita_sturh = (word_h & mask_sturh)|(value_sturh); 
+                mem_write_32(adress_aligned_sturh, palabrita_sturh); 
+
+                uint32_t palabrita_sturh_2 = mem_read_32(adress_aligned_sturh + 4); 
+                uint32_t mask_sturh_2 = ~(0b11111111);
+                uint8_t value_sturh_2 = (val_h >> 8) & 0b11111111 ;
+
+                uint32_t palabrita_sturh_2_mask = (palabrita_sturh_2 & mask_sturh)|(value_sturh_2); 
+                mem_write_32(adress_aligned_sturh + 4, palabrita_sturh_2_mask); 
+
+            }
+            else{
+                uint32_t mask_sturh = ~(0b1111111111111111 << (byte_position_sturh * 8));
+                uint32_t value_sturh = (val_h << (byte_position_sturh * 8));
+
+                uint32_t palabrita_sturh = (word_h & mask_sturh)|(value_sturh); 
+                mem_write_32(adress_aligned_sturh, palabrita_sturh); 
+
+               
+            }
+
         }     
 }
 
@@ -416,7 +525,15 @@ void process_instruction() {
     identify_instruction(opcode);
     execute_instruction(instruction);
     
-    if (RUN_BIT) {
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
-    } 
+    if (opcode == B || opcode == B_cond){
+        return;
+    } else if ((opcode == BR) ) {
+        return;
+    } else if (opcode == CBZ || opcode == CBNZ) {
+        return;
+    }
+
+    
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    NEXT_STATE.REGS[31] = 0;
 }
