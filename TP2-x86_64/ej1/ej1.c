@@ -1,15 +1,74 @@
 #include "ej1.h"
 
 string_proc_list* string_proc_list_create(void){
+	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
+	if (list == NULL){
+		return NULL;
+	}
+	list -> first = NULL;
+	list -> last = NULL;
+
+	return list;
 }
 
 string_proc_node* string_proc_node_create(uint8_t type, char* hash){
+	if (hash == NULL){
+		return NULL;
+	}
+	string_proc_node* node = (string_proc_node*)malloc(sizeof(string_proc_node));
+	if (node == NULL){
+		return NULL;
+	}
+	node -> next = NULL;
+	node -> previous = NULL;
+	node -> type = type;
+	node -> hash = hash;
+
+	return node;
+
 }
 
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
+	if (list == NULL || hash == NULL){
+		return;
+	}
+	string_proc_node* to_add = string_proc_node_create(type, hash);
+	if (to_add == NULL){
+		return;
+	}
+	if(list -> first == NULL && list -> last == NULL){
+		list -> first = to_add;
+		list -> last = to_add;
+		return;
+	}
+	string_proc_node* current = list -> last;
+	current -> next = to_add;
+	to_add -> previous = current;
+	list -> last = to_add;
+
 }
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
+	char* result = malloc(1);
+    result[0] = '\0';
+
+    string_proc_node* current = list->first;
+
+    while (current != NULL) {
+        if (current->type == type) {
+            char* temp = str_concat(result, current->hash);
+            free(result);
+            result = temp;
+        }
+        current = current->next;
+    }
+
+    char* temp = str_concat(hash, result);
+    free(result);
+    result = temp;
+
+    return result;
+
 }
 
 
@@ -63,4 +122,3 @@ void string_proc_list_print(string_proc_list* list, FILE* file){
                 current_node = current_node->next;
         }
 }
-

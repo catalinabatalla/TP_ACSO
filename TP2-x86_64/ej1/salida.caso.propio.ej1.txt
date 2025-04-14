@@ -1,0 +1,16 @@
+== Ejercicio 1a ==
+
+Creando lista vacia
+
+======================== Libera memoria =======================
+
+Creando nodo vacio
+
+======================== Libera memoria =======================
+
+Creando lista vacia
+
+List length: 0
+
+Agregando estrellas:
+
