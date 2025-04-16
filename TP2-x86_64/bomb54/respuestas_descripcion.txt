@@ -1,0 +1,60 @@
+Catalina Batalla
+cbatalla@udesa.edu.ar
+
+Fase 1:
+Para la fase uno, principalmente lo que se hace es comparar dos strings (el que esta en el input.txt)
+y el que esta provisto en la direccion. Para encontrar a que se compara "imprimimos"  el string que está
+guardado en RSI, en la direccion de memoria 0x4c9a60. Entonces se "imprime" con x/s 0x4c9a60. 
+Esto es lo que se guarda en input.txt. Entonces cuando se corre, no salta ningun error porque compara los 
+dos strings y son iguales. No explota la bomba.
+
+Fase 2:
+Para la fase dos, la función recibe 3 números. Donde a los primeros dos se les hace un XOR, y luego se les
+hace un >> 1 (right shift de 1). Luego se llama la funcion misterio la cual compara si el tercer número es 
+menor a 0, si es mayor explota la bomba. Despues compara si el resultado del XOR y el shift, se comapra el 
+resultado con la última entrada del número. Si estos son iguales, no explota la bomba.
+Es decir:
+3 entradas: a b c
+(a XOR b) >> 1 == c && c < 0 
+
+Fase 3:
+Para la fase 3, la funcion espera como entrada una palabra y un número. Primero llama a readlines que carga una lista de
+palabras (palabras.txt), luego llama a la función cuenta que tiene en cuenta la palabra del input, la lista de palabras, y el numero del
+input. Cuenta es una función recursiva de busqueda binaria, que tiene el inicio  y fin (de la palabra del input), y el array de palabras.
+Busca la mitad de la palabra (inicio + fin)//2 y toma como primer valor el indexado en el array (o sea, pone array[mitad_palabra]) y hace [0]
+o sea toma el primer caracter de la palabra encontrada en el array. Despues lo convierte en un entero con signo. Si el caracter es positivo, 
+la función busca hacia la derecha, si es menor se mueve a izquierda. En cada paso, suma recursivamente el valor del carácter leído. Luego coinciden
+el valor que devuelve con el input. Si no son iguales, explota.
+
+Fase 4:
+Para la fase cuatro, la funcion recibe un string, los numeros que se pasan son equivalentes a la posicion de 
+las palabras objetivos en un array. Al hacer x/s 0x4cde40 (donde se usan los numeros pasados como entrada como
+indices) se muestra el array, el cual son números hexa, el cual, si se convierten a ASCII son letras, el cual 
+queda asi: [e, g, m, c, f, a, i, j, o, p, n, h, d, b, k, l]. La palabra objetivo (con el cual se compara con la 
+entrada convertida con los valores del array), se imprime con $rdi. Esta es "colina". Entonces usamos los indices 
+del array. Por ejempllo c = array[3], entonces primero va el 3. Pero cuando llegamos a la l y n surge un problema
+porque n = array[10] y l = array[15]. Y adicionalmente, en la fase 4 se chequea si el input es mayor a largo 6, 
+entonces si ponemos 10 y 15, nos pasariamos de largo 6. Entonces el codigo de la fase 4 se realiza una operacion and 0xf
+que hace un mask de los 4 bits menos significativos. Entonces al valor ASCII de la letra le hace un mask el cual devuelve
+el número para el array.
+Por ejemplo 'o':
+ASCII de o = 0X6F
+0x6F & 0XF = 0110 1111 & 0000 1111 = 1111 = 15
+Entonces se compara con "colina" y equivale. No se explota la bomba.
+
+Fase secreta:
+Para la fase secreta se entra un número, y chequea si el numero esta entre 1 y 1000, sino explota la bomba. Luego llama
+a la función fun7 que navega un arbol binario, donde indica el camino para recorrer un arbol. Si se suma 8, va a la izquierda,
+y se si se suma 16 a la derecha (offsets). Indica el camino binario, si va a la izquierda es 0, a la derecha 1. Despues en la función
+fase secreta, indica que si el resultado de fun7 no es 4, explota la bomba. Entonces el camino tiene que ser 0b100 = Derecha e izquierda 
+e iquierda. En la fase 4 al hacer x/wx 4f91f0 esto nos devuelve el nodo raíz en hexa, lo convierto a decimal y es el valor de la raiz (36).
+Entonces como quiero ir a la derecha le sumo 16 => 0x4f9200 hago x/wx, me da 50. Luego a 0x4f9200 (50) le sumo 8 para que me da el nodo a la 
+izquierda. Y repito hasta que hago derecha izq izq. Termino con el valor 40. Esto es lo que es mi número objetivo.
+El arbol sería así (lo que chequee):
+                36
+              /    \
+            8      50
+             \     /
+            22    45
+                  /
+                40 (objetivo)

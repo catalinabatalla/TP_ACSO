@@ -16,6 +16,9 @@ global string_proc_list_concat_asm
 extern malloc
 extern free
 extern str_concat
+extern strlen
+extern strcpy
+extern strdup
 
 
 string_proc_list_create_asm:
@@ -26,7 +29,7 @@ string_proc_list_create_asm:
     MOV RDI, 16
     CALL malloc ; malloc espera el tamaño en RDI (1era variable disponible)
 
-    CMP RAX, 0 ; el malloc se guarda en RAX
+    TEST RAX, RAX ; el malloc se guarda en RAX
     JE .return_null ; (jump if equal) entonces si es = 0 (nulo) -> devuelve null
 
     MOV QWORD [RAX], 0 ; list -> first = NULL (0)
@@ -36,7 +39,7 @@ string_proc_list_create_asm:
 
 ;defino las funciones que usé
 .return_null:
-    MOV RAX, 0; se sale 
+    ; se sale directo
 
 .end:
     POP RBP ;hago este pop (alineo)
@@ -50,19 +53,23 @@ string_proc_node_create_asm:
     ; RDI = type (1era variable) (1 byte) (pero la puedo usar para otra cosa)
     ; RSI = hash (2nda variable) (8 byte) (es un puntero)
 
+    MOV R8B, DIL ; guardamos el type (uint8) en R8B
+    MOV R9, RSI; R9 = hash
+
     ; por el struct del nodo entonces tenemos que 
-    CMP RSI, 0 ;si hash esta vacio termino
+    TEST R9, R9 ;si hash esta vacio termino
     JE .return_null 
 
     MOV RDI, 32 ; tiene 2 punteros (8), un uint8 (8) y un char (1) pero tiene que ser multiplo de 8 (32)
     CALL malloc
-    CMP RAX, 0 ;veo si falla el MALLOC 
+    TEST RAX, RAX ;veo si falla el MALLOC 
     JE .return_null ;devuelve null
 
-    MOV QWORD [RAX + 16], 0 ; si nodo -> next = NULL (0)
-    MOV QWORD [RAX + 8], 0 ; si nodo -> prev = NULL (0) 
-    MOV BYTE [RAX], DIL ; este es el type, dil es la version uint8 (byte porq es 1 byte)
-    MOV QWORD [RAX + 24], RSI ;este es el hash
+    ; RAX  = NODO NUEVO
+    MOV     QWORD [RAX], 0          ; node->next = NULL
+    MOV     QWORD [RAX + 8], 0      ; node->previous = NULL
+    MOV     BYTE  [RAX + 16], R8B   ; node->type = type
+    MOV     QWORD [RAX + 24], R9   ; node->hash = hash
 
     JMP .end
 .return_null:
@@ -72,118 +79,142 @@ string_proc_node_create_asm:
     POP RBP ;hago este pop (alineo)
     RET ;devuelvo !
 
-string_proc_list_add_node_asm:
-    ; RDI = lista (16 bytes) (lista que tiene 16 x los 2 punteros)
-    ; RSI = type (1 byte) (char)
-    ; RDX = hash (8 bytes) (puntero)
+global string_proc_list_add_node_asm
 
+string_proc_list_add_node_asm:
+    ; Verificamos si list == NULL || hash == NULL
+    TEST    RDI, RDI
+    JE      .return
+    TEST    RDX, RDX
+    JE      .return
+
+    ; Guardamos list en el stack (lo vamos a necesitar después del CALL)
+    PUSH    RDI                ; guardar 'list'
+
+    ; Preparamos argumentos para string_proc_node_create_asm
+    MOVZX   EDI, SIL           ; type → edi (zero-extend a 32 bits)
+    MOV     RSI, RDX           ; hash → rsi
+    CALL    string_proc_node_create_asm
+
+    ; Restauramos list
+    POP     RDI
+
+    ; Verificamos si el nodo fue creado correctamente
+    TEST    RAX, RAX
+    JE      .return
+
+    ; RAX = to_add
+    ; RDI = list
+    MOV     RCX, [RDI]         ; list->first
+    MOV     RDX, [RDI + 8]     ; list->last
+
+    ; Si la lista está vacía
+    TEST    RCX, RCX
+    JNZ     .not_empty
+    TEST    RDX, RDX
+    JNZ     .not_empty
+
+    ; list->first = to_add
+    MOV     [RDI], RAX
+
+    ; list->last = to_add
+    MOV     [RDI + 8], RAX
+
+    JMP     .return
+
+.not_empty:
+    ; current = list->last
+    MOV     RBX, [RDI + 8]         ; current = list->last
+
+    ; current->next = to_add
+    MOV     [RBX], RAX             ; current->next = to_add
+
+    ; to_add->previous = current
+    MOV     [RAX + 8], RBX         ; to_add->previous = current
+
+    ; list->last = to_add
+    MOV     [RDI + 8], RAX         ; list->last = to_add
+
+.return:
+    RET
+
+    
+string_proc_list_concat_asm:
     PUSH RBP
     MOV RBP, RSP
 
-    MOV R8, RDI ; dsp lo pisamos entonces lo guardo en R8 = list
-
-    CMP RDI, 0 ; if list == NULL
-    JE .end ; no devuelve NULL pq esta funcion devuelve tipo void
-
-    CMP RDX, 0 ; if hash == NULL
-    JE .end 
-
-    MOV RDI, RSI ; muevo type a la primera variable (lo que me devuelve la funcion que voy a llamar ahora)
-    MOV RSI, RDX ; muevo hash a la segunda variable
-
-    CALL string_proc_node_create_asm
-    CMP RAX, 0; resultavo RAX si es NULL termina
-    JE .end
-
-    MOV RCX, [R8] ; rcx = list -> first
-    MOV RDX, [R8 + 8] ; ahora puedo usar rdx porque lo moví a rsi rdx = list -> last
-    
-    MOV R10, RCX
-    OR R10, RDX; este OR compara bit a bit -> si el resultado es 0 -> termina
-    CMP R10, 0 
-    JNE .append_to_end
-
-    MOV [R8], RAX; list-> first = to_add
-    MOV [R8 + 8], RAX; list-> last = to_add
-
-    JMP .end
-
-.append_to_end:
-    MOV R9, [R8 + 8]; current = list -> last
-    MOV [R9 + 16], RAX;  current -> next = to_add
-    MOV [RAX + 8], R9;  to_add -> previous = current
-    MOV [R8 + 8], RAX;
-
-.end:
-    POP RBP
-    RET
-
-string_proc_list_concat_asm:
-    PUSH RBP
-    MOV RBP, RSP 
-
     ; RDI = list
-    ; RSI = type
-    ; RDX = hash
+    ; SIL = type (uint8)
+    ; RDX = hash inicial (char*)
 
-    ;guardamos los callee- save
+    ; Guardamos registros que vamos a usar
     PUSH RBX
     PUSH R12
     PUSH R13
     PUSH R14
+    PUSH R15
 
-    MOV R12, RDI; R12 = list
-    MOV R13, RSI ; R13 = type
-    MOV R14, RDX; R14 = hash
+    ; Guardamos argumentos en registros temporales
+    MOV RBX, RDI          ; RBX = list
+    MOV R12B, SIL         ; R12B = type
+    MOV R13, RDX          ; R13 = hash inicial
 
-    MOV RDI, 1; result = malloc(1)
-    CALL malloc
-    MOV RBX, RAX; RBX = result 
-    MOV BYTE [RBX], 0 ; result[0] = '\0'
+    ; === strdup(hash) ===
+    ; Creamos una copia del hash inicial (por si no es NULL)
+    MOV RDI, R13
+    CALL strdup
+    MOV R14, RAX          ; R14 = result
 
-    ; RAX = current
-    MOV RAX, [R12 + 8]; current = list -> first
+    CMP R14, 0
+    JE .end               ; Si strdup falla, salimos con NULL
+
+    ; === current = list->first ===
+    MOV R15, [RBX]        ; R15 = current = list->first
 
 .loop:
-    CMP RAX, 0 ; while (current != NULL)
-    JE .post_loop
-    MOVZX RCX, BYTE [RAX + 16] ; RCX = current -> type
-    CMP CL, R13B; cl el byte bajo del registro rcx y r13b es el byte bajo de r13 porque es uint8_t
-    JNE .next_node
+    CMP R15, 0
+    JE .end               ; Si current == NULL, terminamos
 
-    MOV RDI, RBX; result 
-    MOV RSI, [RAX + 24] ; current = hash
-    CALL str_concat ;
+    ; current->type está en offset 16
+    MOVZX EAX, BYTE [R15 + 16]
+    CMP AL, R12B
+    JNE .next             ; Si el tipo no coincide, saltamos
 
-    MOV RDI, RBX
-    CALL free ;
+    ; current->hash está en offset 24
+    MOV RSI, [R15 + 24]
+    TEST RSI, RSI
+    JE .next              ; Si el hash es NULL, saltamos
 
-    MOV RBX, RAX; result = temp
-
-.next_node:
-    MOV RAX, [RAX + 8] ; current = current -> next
-    JMP .loop
-    
-.post_loop:
+    ; Concatenamos result + current->hash
     MOV RDI, R14
-    MOV RSI, RBX
-    CALL str_concat;
+    CALL str_concat
+    CMP RAX, 0
+    JE .concat_error      ; Si str_concat falla, salimos con error
 
-    MOV RDI, RBX
-    CALL free;
-    
+    ; Liberamos el string viejo
+    MOV RDI, R14
+    MOV R14, RAX          ; R14 ahora apunta al nuevo string concatenado
+    CALL free
+
+.next:
+    ; Avanzamos al siguiente nodo
+    MOV R15, [R15]        ; current = current->next
+    JMP .loop
+
+.concat_error:
+    ; Si str_concat falla, liberamos memoria y devolvemos NULL
+    MOV RDI, R14
+    CALL free
+    XOR R14, R14          ; R14 = NULL
+
+.end:
+    MOV RAX, R14          ; return result
+
+    ; Restauramos registros
+    POP R15
     POP R14
     POP R13
     POP R12
     POP RBX
-
     POP RBP
     RET
-
-
-
-
-
-
-
-

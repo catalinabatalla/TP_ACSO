@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
+#include <stddef.h>
 
 /**
 *	crea y destruye a una lista vacía
@@ -64,6 +65,13 @@ void run_tests(){
 }
 
 int main (void){
+
+
+    printf("next:     %lu\n", offsetof(struct string_proc_node_t, next));
+    printf("previous: %lu\n", offsetof(struct string_proc_node_t, previous));
+    printf("type:     %lu\n", offsetof(struct string_proc_node_t, type));
+    printf("hash:     %lu\n", offsetof(struct string_proc_node_t, hash));
+
 	run_tests();
 	return 0;    
 }
