@@ -45,16 +45,24 @@ Entonces se compara con "colina" y equivale. No se explota la bomba.
 Fase secreta:
 Para la fase secreta se entra un número, y chequea si el numero esta entre 1 y 1000, sino explota la bomba. Luego llama
 a la función fun7 que navega un arbol binario, donde indica el camino para recorrer un arbol. Si se suma 8, va a la izquierda,
-y se si se suma 16 a la derecha (offsets). Indica el camino binario, si va a la izquierda es 0, a la derecha 1. Despues en la función
-fase secreta, indica que si el resultado de fun7 no es 4, explota la bomba. Entonces el camino tiene que ser 0b100 = Derecha e izquierda 
-e iquierda. En la fase 4 al hacer x/wx 4f91f0 esto nos devuelve el nodo raíz en hexa, lo convierto a decimal y es el valor de la raiz (36).
-Entonces como quiero ir a la derecha le sumo 16 => 0x4f9200 hago x/wx, me da 50. Luego a 0x4f9200 (50) le sumo 8 para que me da el nodo a la 
-izquierda. Y repito hasta que hago derecha izq izq. Termino con el valor 40. Esto es lo que es mi número objetivo.
+y se si se suma 16 a la derecha (offsets). Indica el resultado de la función fun7. Si el nodo es NULL, devuelve -1, si es igual a la 
+del nodo, devuelve 0 y comienza a hacer la recursión. Si es menor, va al hijo izquierdo y realiza = 2 * fun7(left). Si es mayor
+va al hijo derecho, hace = 2*fun7(right) + 1. La función secret_phase indica que si el valor que devuelve fun7 es diferente a 4 explota. 
+Entonces lo que se busca es hacer izquierda -> izquierda -> derecha. 
+Desde abajo para arriba. 
+2 * 0 + 1 = 1 (porque ya encontro el nodo) e hizo la accion derecha antes
+2 * 1 = 2 (el anterior daba 1) e hizo la accion izquierda antes
+2 * 2 = 4 (el anterior daba 2) e hizo la accion izquierda antes.
+entonces valor = 4. Y no explota la bomba
+En la fase 4 al hacer x/wx 0x4f91f0 esto nos devuelve el nodo raíz en hexa, lo convierto a decimal y es el valor de la raiz (36).
+Entonces como quiero ir a la izquierda le sumo 8 => 0x4f91f8 hago x/wx, me da 8. Luego a 0x4f91f8 (8) le sumo 8 para que me da el nodo a la 
+izquierda. Hago x/wx 0x4f9200, el cual me da 6. Ahora a 0x4f9200 le sumo 16 porque quiero ir a la derecha y esto me dará el resultado.
+Me da 7, este es el numero objetivo.
 El arbol sería así (lo que chequee):
                 36
-              /    \
-            8      50
-             \     /
-            22    45
-                  /
-                40 (objetivo)
+              /    
+            8      
+          /
+        6
+         \
+          7 (objetivo !)    
