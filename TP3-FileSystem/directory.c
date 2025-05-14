@@ -28,12 +28,12 @@ int directory_findname(struct unixfilesystem *fs, const char *name, int dirinumb
       int totalBytesRead = 0;
       int blockNum = 0;
 
-      char buffer[DISKIMG_SECTOR_SIZE];
+      char buffer[DISKIMG_SECTOR_SIZE]; // buffer para leer bloques
   
-      while (totalBytesRead < filesize) {
+      while (totalBytesRead < filesize) { 
           int bytesRead = file_getblock(fs, dirinumber, blockNum, buffer);
           if (bytesRead < 0) {
-              return -1;
+              return -1; // si no se puede leer el bloque
           }
   
           int entriesPerBlock = bytesRead / entrysize; 
@@ -42,12 +42,12 @@ int directory_findname(struct unixfilesystem *fs, const char *name, int dirinumb
           for (int i = 0; i < entriesPerBlock && totalBytesRead < totalEntries; i++, totalBytesRead++) {
               if (entries[i].d_inumber != 0 && strncmp(entries[i].d_name, name, 14) == 0) {
                   *dirEnt = entries[i]; // copiar entrada encontrada
-                  return 0;             // éxito
+                  return 0;            
               }
           }
 
           blockNum++;
       }
   
-      return -1; // no se encontró
+      return -1; 
   }

@@ -76,9 +76,45 @@ int main(int argc, char *argv[]) {
     printf("Superblock s_ninode %d\n",(int)fs->superblock.s_ninode);
   }
 
-  if (idumpFlag) DumpInodeChecksum(fs, stdout);
-  if (pdumpFlag) DumpPathnameChecksum(fs, stdout);
 
+  if (idumpFlag) {
+    DumpInodeChecksum(fs, stdout);
+
+    // Test adicional de inodes inválidos
+    struct inode in;
+    int inodes_per_block = DISKIMG_SECTOR_SIZE / sizeof(struct inode);  // 16
+    int maxinode = fs->superblock.s_isize * inodes_per_block;           // 256 típicamente
+
+    if (inode_iget(fs, 0, &in) < 0 && inode_iget(fs, maxinode + 1, &in) >= 0)
+        printf("Test invalid inode: FAIL\n");
+
+    // Test adicional de file_getblock con bloque fuera de rango
+    char buf[DISKIMG_SECTOR_SIZE];
+    int badBlockNum = fs->superblock.s_fsize + 100; // fuera del rango válido
+    int result = file_getblock(fs, 1, badBlockNum, buf);
+    if (result >= 0) {
+      printf("❌ Test file_getblock fuera de rango: FAIL (debería fallar pero no lo hizo)\n");
+    }
+    
+  }
+  if (pdumpFlag) { 
+    DumpPathnameChecksum(fs, stdout); 
+
+    // Test adicional: pathname que no existe
+    // Test 1: pathname completamente inexistente
+    char badchksum1[CHKSUMFILE_SIZE];
+    if (chksumfile_bypathname(fs, "/noexiste", badchksum1) >= 0) {
+        printf("❌ Test pathname '/noexiste': FAIL (debería fallar pero no lo hizo)\n");
+    }
+
+    // Test 2: pathname parcialmente válido (suponiendo que /usr existe pero /usr/nadie no)
+    char badchksum2[CHKSUMFILE_SIZE];
+    if (chksumfile_bypathname(fs, "/usr/nadie", badchksum2) >= 0) {
+        printf("❌ Test pathname '/usr/nadie': FAIL (debería fallar pero no lo hizo)\n");
+  }
+
+  }
+  
   int err = diskimg_close(fd);
   if (err < 0) fprintf(stderr, "Error closing %s\n", argv[1]);
   free(fs);

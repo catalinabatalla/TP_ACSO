@@ -5,32 +5,35 @@
 #include "inode.h"
 #include "diskimg.h"
 
-#define BLOCK_SIZE 512
-
 int file_getblock(struct unixfilesystem *fs, int inumber, int blockNum, void *buf) {
     struct inode in;
 
-    if (inode_iget(fs, inumber, &in) == -1) {
+    if (blockNum < 0) {
+        return -1; // Número de bloque inválido
+    }
+
+    if (inode_iget(fs, inumber, &in) < 0) {
         return -1;
     }
 
-    int filesize = inode_getsize(&in);
-    
-    int offsetfile = blockNum * BLOCK_SIZE;
+    uint32_t filesize = ((uint32_t)in.i_size0 << 16) | in.i_size1;
+    uint32_t offsetfile = (uint32_t)blockNum * DISKIMG_SECTOR_SIZE;
+
+    int blockNumInDisk = inode_indexlookup(fs, &in, blockNum); // si el bloque esta fuera del archivo
+    if (blockNumInDisk < 0) {
+        return -1;
+    }
+
     if (offsetfile >= filesize) {
         return 0;
     }
 
-    int bytes = BLOCK_SIZE;
-    if (offsetfile + bytes > filesize) {
-        bytes = filesize - offsetfile;
+    int bytes = filesize - offsetfile;
+    if (bytes > DISKIMG_SECTOR_SIZE) {
+        bytes = DISKIMG_SECTOR_SIZE;
     }
 
-    int blockNumInDisk = inode_indexlookup(fs, &in, blockNum);
-    if (blockNumInDisk == -1) {
-        return -1;
-    }
-    if (diskimg_readsector(fs->dfd, blockNumInDisk, buf) == -1) {
+    if (diskimg_readsector(fs->dfd, blockNumInDisk, buf) != DISKIMG_SECTOR_SIZE) {
         return -1;
     }
     return bytes;
