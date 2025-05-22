@@ -26,9 +26,9 @@ int main(int argc, char **argv) {
             // Cierro pipes que no uso
             for(int j=0; j<n; j++) {
                 if(j == (i + n - 1) % n) {
-                    close(pipes[j][1]);
+                    close(pipes[j][1]); // Cierro el pipe de escritura
                 } else if(j == i) {
-                    close(pipes[j][0]);
+                    close(pipes[j][0]); // Cierro el pipe de lectura
                 } else {
                     close(pipes[j][0]);
                     close(pipes[j][1]);
