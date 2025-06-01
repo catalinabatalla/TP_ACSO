@@ -1,163 +1,184 @@
-#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <stdbool.h>
 
-#define MAX_LINE 1024
-#define MAX_ARGS 200
-#define MAX_CMDS 10
+#define MAX_COMMANDS 200
 
-void free_args(char **args);
-
-
-void remove_newline(char *str) {
-    char *nl = strchr(str, '\n');
-    if (nl) *nl = '\0';
-}
-
-int parse_pipeline(char *line, char *commands[]) {
-    int count = 0;
-    char *token = strtok(line, "|");
-    while (token != NULL) {
-
-        while (*token == ' ') token++;
-        char *end = token + strlen(token) - 1;
-        while (end > token && *end == ' ') *end-- = '\0';
-
-        if (*token == '\0') {
-            return -1; // Error de sintaxis: comando vacío
-        }
-
-        commands[count++] = token;
-        token = strtok(NULL, "|");
+bool is_quote_char(char c) {
+    // Comillas ASCII para probar todos los casos
+    if (c == '"' || c == '\''){
+        return true;
     }
-    return count;
+    if ((unsigned char)c == 0x93 || (unsigned char)c == 0x94 || // “ ”
+        (unsigned char)c == 0x91 || (unsigned char)c == 0x92){   // ‘ ’
+        return true;
+    }
+    return false;
 }
 
-char** parse_args_quoted(char *cmd) {
-    char **args = malloc((MAX_ARGS + 1) * sizeof(char *));
+char matching_quote(char open) {
+    switch(open) {
+        case '"': return '"';
+        case '\'': return '\'';
+        // reemplazar comillas tipográficas por comillas ASCII
+        default: return open;
+    }
+}
+
+char** parse_args(char* command) {
+    char** args = malloc(100 * sizeof(char*));
     int argc = 0;
-    char *p = cmd;
+    int i = 0;
+    int len = strlen(command);
+    
+    while (i < len) {
+        // Saltar espacios iniciales
+        while (i < len && (command[i] == ' ' || command[i] == '\t')) i++;
+        if (i >= len) break;
 
-    while (*p) {
-        while (*p == ' ' || *p == '\t') p++;
-        if (*p == '\0') break;
+        char* start;
+        char quote = 0;
 
-        if (argc > MAX_ARGS) {
-            printf("Too many arguments\n");
-            free_args(args); 
-            exit(1);
-        }
-
-
-        char *start;
-        int len = 0;
-
-        if (*p == '"' || *p == '\'') {
-            char quote = *p++;
-            start = p;
-            while (*p && *p != quote) p++, len++;
-            args[argc] = strndup(start, len);
-            if (*p == quote) p++; // Saltar comilla final
+        if (command[i] == '"' || command[i] == '\'') {
+            quote = command[i++];
+            start = &command[i];
+            while (i < len && command[i] != quote) i++;
         } else {
-            start = p;
-            while (*p && *p != ' ' && *p != '\t') p++, len++;
-            args[argc] = strndup(start, len);
+            start = &command[i];
+            while (i < len && command[i] != ' ' && command[i] != '\t') i++;
         }
 
-        argc++;
+        int length = &command[i] - start;
+        char* arg = malloc(length + 1);
+        strncpy(arg, start, length);
+        arg[length] = '\0';
+        args[argc++] = arg;
+
+        if (quote && command[i] == quote) i++;  // Saltar comilla de cierre
     }
 
     args[argc] = NULL;
     return args;
 }
 
-void free_args(char **args) {
-    for (int i = 0; args[i]; i++) free(args[i]);
-    free(args);
-}
 
-void ejecutar_pipeline(char *commands[], int num_cmds) {
-    int pipefd[2], in_fd = 0;
+// Reemplaza comillas tipográficas UTF-8 (3 bytes) por comillas ASCII dobles (")
+void change_quotes(char* str) {
+    char* p = str;
+    char* dst = str;
 
-    for (int i = 0; i < num_cmds; i++) {
-        pipe(pipefd);
-        pid_t pid = fork();
-
-        if (pid == 0) {
-            if (in_fd != 0) {
-                dup2(in_fd, 0);
-                close(in_fd);
+    while (*p) {
+        if ((unsigned char)p[0] == 0xE2 && (unsigned char)p[1] == 0x80) {
+            if ((unsigned char)p[2] == 0x9C || (unsigned char)p[2] == 0x9D) {
+                // “ o ”
+                *dst++ = '"';
+                p += 3;
+                continue;
             }
-
-            if (i < num_cmds - 1) {
-                dup2(pipefd[1], 1);
-                close(pipefd[1]);
-            }
-
-            close(pipefd[0]);
-
-            char **args = parse_args_quoted(commands[i]);
-            if (execvp(args[0], args) == -1) {
-                printf("command not found\n");
-                exit(1);
+            if ((unsigned char)p[2] == 0x98 || (unsigned char)p[2] == 0x99) {
+                // ‘ o ’
+                *dst++ = '\'';
+                p += 3;
+                continue;
             }
         }
 
-        // Proceso padre
-        wait(NULL);
-        close(pipefd[1]);
-        if (in_fd != 0) close(in_fd);
-        in_fd = pipefd[0];
+        // Sino tiene comillas raras copia directo el carácter
+        *dst++ = *p++;
     }
+    *dst = '\0';
 }
 
 int main() {
-    char line[MAX_LINE];
+    char command[256];
+    char* commands[MAX_COMMANDS];
+    int command_count;
 
     while (1) {
-        printf("> ");
+        if (isatty(STDIN_FILENO)) { //para correr los tests de Rama
+            printf("Shell> ");
+            fflush(stdout);
+        }
+
         fflush(stdout);
-        if (!fgets(line, sizeof(line), stdin)) break;
 
-        remove_newline(line);
-
-        if (strcmp(line, "exit") == 0) break;
-
-        char *trim = line;
-        while (*trim == ' ') trim++;
-        if (*trim == '|') {
-            printf("Syntax error\n");
-            continue;
+        if (fgets(command, sizeof(command), stdin) == NULL) {
+            break;  // Salir si hay error o EOF
         }
 
-        int len = strlen(line);
-        while (len > 0 && line[len - 1] == ' ') len--;
-        line[len] = '\0';
-        if (len > 0 && line[len - 1] == '|') {
-            printf("Syntax error\n");
-            continue;
+        change_quotes(command);
+        command[strcspn(command, "\n")] = '\0';
+
+        // Salir si el comando es "quit" o "q" o "exit"
+        if (strcmp(command, "quit") == 0 || strcmp(command, "q") == 0 || strcmp(command, "exit") == 0) {
+            printf("Bye!\n");
+            break;
+        }
+        // Parseo por pipes 
+        command_count = 0;
+        char* token = strtok(command, "|");
+        while (token != NULL && command_count < MAX_COMMANDS) {
+            commands[command_count++] = token;
+            token = strtok(NULL, "|");
         }
 
-        char *commands[MAX_CMDS];
-        char line_copy[MAX_LINE];
-        strcpy(line_copy, line);
+        int prev_fd = -1;
+        int pipefd[2];
 
-        if (strstr(line, "||") != NULL) {
-            printf("Syntax error\n");
-            continue;
+        for (int i = 0; i < command_count; i++) {
+            // Crear pipe si no es el último comando
+            if (i < command_count - 1) {
+                if (pipe(pipefd) == -1) {
+                    perror("pipe");
+                    exit(1);
+                }
+            }
+
+            pid_t pid = fork();
+            if (pid == -1) {
+                perror("fork");
+                exit(1);
+            }
+
+            if (pid == 0) {
+                // Hijo
+
+                // Si hay input de pipe anterior
+                if (i > 0) {
+                    dup2(prev_fd, STDIN_FILENO);
+                    close(prev_fd);
+                }
+
+                // Si no es el último, redirige stdout al pipe
+                if (i < command_count - 1) {
+                    close(pipefd[0]); // Cerrar
+                    dup2(pipefd[1], STDOUT_FILENO);
+                    close(pipefd[1]);
+                }
+
+                // Parsear argumentos y ejecutar
+                char** args = parse_args(commands[i]);
+                execvp(args[0], args);
+
+                perror("execvp");
+                exit(1);
+            } else {
+                // Padre
+                if (i > 0) close(prev_fd); // Cerramos anterior read end
+                if (i < command_count - 1) {
+                    close(pipefd[1]); // Cerramos write end
+                    prev_fd = pipefd[0]; // El read end pasa al próximo
+                }
+            }
         }
 
-
-        int num_cmds = parse_pipeline(line_copy, commands);
-        if (num_cmds == -1) {
-            printf("Syntax error\n");
-            continue;
+        // Esperar a todos los hijos
+        for (int i = 0; i < command_count; i++) {
+            wait(NULL);
         }
-
-        ejecutar_pipeline(commands, num_cmds);
     }
 
     return 0;

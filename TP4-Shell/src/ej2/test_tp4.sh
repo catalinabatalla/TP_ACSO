@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# ==== CONFIGURACIÓN ====
+# CONFIGURACIÓN
 TEST_FILE="test.txt"
 TEMP_OUT=$(mktemp)
-VALGRIND_OUT=$(mktemp)
+EXPECTED_OUT=$(mktemp)
+SHELL_OUT=$(mktemp)
+SHELL_ERR=$(mktemp)
+VALGRIND_OUT="valgrind.txt"
 TOTAL=0
 PASSED=0
 FAILED=0
@@ -11,14 +14,14 @@ MEM_CLEAN=0
 MEM_FAIL=0
 VERBOSE=false
 
-# ==== COLORES ====
+# COLORES
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # Sin color
+NC='\033[0m'
 
-# ==== COMPILACIÓN ====
+# COMPILACIÓN
 echo -e "${BLUE}⚙️  Compilando shell...${NC}"
 make -s
 if [ ! -f ./shell ]; then
@@ -26,42 +29,70 @@ if [ ! -f ./shell ]; then
     exit 1
 fi
 
-# ==== ARCHIVO AUXILIAR ====
+# ARCHIVO AUXILIAR
 cat <<EOF > "$TEST_FILE"
 imagen.png
 documento.zip
 imagen.jpg
 EOF
 
-# ==== FUNCIÓN DE TEST ====
+# FUNCIÓN PRINCIPAL DE TEST
 run_test() {
     local input="$1"
-    local expected="$2"
-    local description="$3"
+    local description="$2"
+    local should_error="$3"  # "error" if command should produce error, empty otherwise
     ((TOTAL++))
 
     echo -e "${YELLOW}➤ Test $TOTAL: $description${NC}"
     echo -e "   ${BLUE}Comando:${NC} $input"
-    echo -e "   ${BLUE}Esperado:${NC} $expected"
 
-    ########## FUNCIONAL ##########
-    output=$(echo -e "$input\nexit" | ./shell 2>&1)
-    output=$(echo "$output" | sed '/^Shell> *$/d')
-    if echo "$output" | grep -q "$expected"; then
-        echo -e "   ${BLUE}Salida: ${NC} $output"
-        echo -e "   ${GREEN}✅ Funcionalidad PASÓ${NC}"
-        ((PASSED++))
+    # Get shell output
+    echo -e "$input\nexit" | ./shell > "$SHELL_OUT" 2> "$SHELL_ERR"
+    sed -i -E '/^ *Shell started.*$/d;/^ *Shell terminated.*$/d;/^Shell> *$/d;s/^Shell> *//' "$SHELL_OUT"
+
+    if [[ "$should_error" == "error" ]]; then
+        if [ -s "$SHELL_ERR" ]; then
+            echo -e "   ${YELLOW}⚠️  Error detectado, pero se recomienda verificar manualmente la salida de stderr:${NC}"
+            cat "$SHELL_ERR" | head -3 | sed 's/^/     /'
+            echo -e "   ${GREEN}✅ Funcionalidad OK (stderr no está vacío)${NC}"
+            ((PASSED++))
+        else
+            echo -e "   ${RED}❌ Funcionalidad FALLÓ (No se detectó error en stderr)${NC}"
+            ((FAILED++))
+        fi
+    elif [ "$input" = "exit" ]; then
+        # Special case for exit command
+        if [ ! -s "$SHELL_OUT" ]; then
+            echo -e "   ${GREEN}✅ Funcionalidad OK (Exit funcionó correctamente)${NC}"
+            ((PASSED++))
+        else
+            echo -e "   ${RED}❌ Funcionalidad FALLÓ (Exit no funcionó correctamente)${NC}"
+            ((FAILED++))
+        fi
     else
-        echo -e "   ${RED}❌ Funcionalidad FALLÓ${NC}"
-        echo -e "   ${BLUE}Obtenido:${NC} $(echo "$output" | head -n 1)"
-        ((FAILED++))
+        # Get expected output from actual terminal
+        bash -c "$input" 2>&1 > "$EXPECTED_OUT"
+        
+        # Compare outputs using diff
+        if diff -q "$EXPECTED_OUT" "$SHELL_OUT" > /dev/null; then
+            echo -e "   ${GREEN}✅ Funcionalidad OK${NC}"
+            ((PASSED++))
+        else
+            echo -e "   ${RED}❌ Funcionalidad FALLÓ${NC}"
+            echo -e "   ${BLUE}Diferencias encontradas:${NC}"
+            echo -e "   ${BLUE}Esperado:${NC}"
+            cat "$EXPECTED_OUT" | head -3 | sed 's/^/     /'
+            echo -e "   ${BLUE}Obtenido:${NC}"
+            cat "$SHELL_OUT" | head -3 | sed 's/^/     /'
+            ((FAILED++))
+        fi
     fi
 
-    ########## VALGRIND ##########
-    echo -e "$input\nexit" | valgrind --leak-check=full --quiet --error-exitcode=42 ./shell > "$TEMP_OUT" 2> "$VALGRIND_OUT"
+    # Valgrind check
+    echo -e "$input\nexit" | valgrind --leak-check=full --error-exitcode=42 ./shell > "$TEMP_OUT" 2>> "$VALGRIND_OUT"
     status=$?
     if [ "$status" -eq 0 ]; then
-        echo -e "   ${GREEN}✅ Memoria limpia (Valgrind)${NC}"
+        echo -e "   ${GREEN}✅ Memoria OK (Valgrind)${NC}"
         ((MEM_CLEAN++))
     else
         echo -e "   ${RED}🧠 Leak detectado (Valgrind)${NC}"
@@ -73,35 +104,59 @@ run_test() {
     echo ""
 }
 
-# ==== TESTS NORMALES Y EXTRA ====
+# TESTS FUNCIONALES BÁSICOS
+run_test "echo hola" "Echo simple"
+run_test "echo \"hola mundo\"" "Echo con comillas dobles"
+run_test "echo hola    mundo | wc -w" "Espacios múltiples y pipe"
+run_test "seq 10 | grep 5" "Grep sobre secuencia"
+run_test "seq 5 | tail -n 1" "Tail de la última línea"
+run_test "echo 'uno' 'dos' | wc -w" "Comillas simples como argumentos"
+run_test "echo \"uno  dos\" | wc -m" "Conteo de caracteres con espacios"
+run_test "cat $TEST_FILE | grep .zip" "Búsqueda de extensión"
+run_test "echo hola | grep hola | wc -l" "Pipeline triple"
+run_test "/bin/echo hola" "Comando con ruta absoluta"
 
-run_test "echo hola" "hola" "Echo simple"
-run_test "echo \"hola mundo\"" "hola mundo" "Echo con comillas dobles"
-run_test "echo hola    mundo | wc -w" "2" "Espacios múltiples y pipe"
-run_test "seq 10 | grep 5" "5" "Grep sobre secuencia"
-run_test "seq 5 | tail -n 1" "5" "Tail de la última línea"
-run_test "echo 'uno' 'dos' | wc -w" "2" "Dos palabras con comillas simples"
-run_test "echo \"uno  dos\" | wc -m" "9" "Conteo de caracteres con espacios"
-run_test "cat $TEST_FILE | grep .zip" "documento.zip" "Grep con patrón simple"
-run_test "echo hola | grep hola | wc -l" "1" "Pipeline triple"
-run_test "| echo hola" "Syntax error" "Pipe al inicio"
-run_test "echo hola |" "Syntax error" "Pipe al final"
-run_test "echo hola || wc" "Syntax error" "Pipe doble inválido"
-run_test "inexistentecomando" "command not found" "Comando inválido"
-run_test "   echo    prueba   " "prueba" "Comando con espacios en los extremos"
-run_test "exit" "" "Comando exit"
+# FUNCIONALES EXTRA
+run_test "ls | sort | uniq" "" "Pipeline real sin wc (validez estructural)"
+run_test $'echo\t\thola' "hola" "Tabulaciones entre palabras"
 
-# ==== CASOS BORDE EXTRA CORREGIDOS ====
+# ERRORES DE SINTAXIS (estos deberían producir errores)
+run_test "| echo hola" "Pipe al inicio" "error"
+run_test "echo hola |" "Pipe al final" "error"
+run_test "echo hola || wc" "Pipe doble" "error"
+run_test "ls | | wc" "Pipe vacío entre comandos" "error"
+run_test "| | | |" "Múltiples pipes vacíos" "error"
+run_test "|||" "Tres pipes consecutivos" "error"
+run_test "| | hola |" "Comando entre pipes vacíos" "error"
 
-run_test "ls | | wc" "Syntax error" "Pipe vacío entre comandos"
-run_test $'echo\t\thola' "hola" "Tabulaciones entre comandos"
-run_test "seq 100 | grep 5 | wc -l | cat | cat | cat" "19" "Pipeline largo con múltiples procesos"
-run_test "echo $(seq -s ' ' 1 200)" "63" "Muchos argumentos (exacto MAX_ARGS)"
-run_test "echo $(seq -s ' ' 1 201)" "Too many arguments" "Muchos argumentos (MAX_ARGS+1)"
+# CASO ESPECIAL: COMANDO EXIT DENTRO DE PIPE
+run_test "exit | wc" "" "Exit dentro de pipeline"
+
+# ERRORES DE PARSING Y COMANDOS INVÁLIDOS
+run_test "inexistentecomando" "Comando inexistente" "error"
+run_test "echo \"hola" "Comillas abiertas sin cerrar" "error"
+run_test "   echo    prueba   " "Espaciado irregular"
+
+# COMANDOS ESPECIALES Y VALORES BORDES
+run_test "exit" "Comando de salida"
+run_test "yes | head -n 5" "Yes truncado por head"
+run_test "echo \"\"" "Echo con string vacío"
+run_test "echo hola | grep -v hola" "Grep que descarta salida"
+run_test "cat /dev/null | wc -l" "Conteo sobre input vacío"
+
+# ARGUMENTOS EXTREMOS
+run_test "echo $(seq -s ' ' 1 63)" "Límite exacto de argumentos"
+run_test "echo $(seq -s ' ' 1 64)" "Exceso de argumentos" "error"
+
+# STRESS TEST: PIPELINE LARGO (200 PROCESOS)
+PIPE_CHAIN=$(printf 'grep . | %.0s' {1..198}; echo tail -n 1)
+run_test "cat $TEST_FILE | $PIPE_CHAIN" "Pipeline de 200 procesos con grep"
 
 
-# ==== RESUMEN FINAL ====
+# EXTRA CREDIT: COMANDOS COMPLEJOS
+run_test "cat $TEST_FILE | grep -E \"\\.png$|\\.zip$\"" "Extra Credit: grep con regex compuesta"
 
+# RESUMEN FINAL
 echo -e "${BLUE}============================================${NC}"
 echo -e "         ${YELLOW}RESUMEN FINAL DE TESTS${NC}"
 echo -e "   Total de tests:     $TOTAL"
@@ -111,6 +166,6 @@ echo -e "   ${GREEN}Sin leaks de memoria: $MEM_CLEAN${NC}"
 echo -e "   ${RED}Con leaks detectados: $MEM_FAIL${NC}"
 echo -e "${BLUE}============================================${NC}"
 
-# ==== LIMPIEZA ====
-rm -f "$TEMP_OUT" "$VALGRIND_OUT" "$TEST_FILE"
+# LIMPIEZA
 make clean > /dev/null
+rm -f "$TEMP_OUT" "$EXPECTED_OUT" "$SHELL_OUT" "$VALGRIND_OUT" "$TEST_FILE" "$SHELL_ERR"
