@@ -18,18 +18,22 @@
 #include <mutex>         // for mutex
 #include <condition_variable> // for condition_variable
 #include "Semaphore.h"   // for Semaphore
+#include <atomic>
+#include <stdexcept>
+
 
 using namespace std;
+
 
 /**
  * @brief Represents a worker in the thread pool.
  */
 typedef struct worker {
-    thread ts;                         // thread handle
-    function<void(void)> thunk;        // the task to execute
-    bool available = true;             // true if worker is free
-    mutex mtx;                         // protects access to thunk and availability
-    Semaphore ready{0};                // signals when a task is ready for this worker
+    thread ts;                        
+    function<void(void)> thunk;      
+    bool available = true;            
+    mutex mtx;                        
+    Semaphore ready{0};                
 } worker_t;
 
 class ThreadPool {
@@ -43,17 +47,18 @@ class ThreadPool {
     void dispatcher();
     void worker(size_t id);
 
-    vector<worker_t> wts;                         // pool of worker threads
-    queue<function<void(void)>> taskQueue;        // pending tasks
-    mutex queueLock;                              // protects taskQueue
-    condition_variable dispatcherCV;              // signals when a new task is scheduled
-    thread dispatcherThread;                      // thread for the dispatcher
+    vector<worker_t> wts;                  
+    queue<function<void(void)>> taskQueue;       
+    mutex queueLock;                        
+    condition_variable dispatcherCV;           
+    thread dispatcherThread;                 
 
-    int activeTasks = 0;                          // number of currently executing tasks
-    mutex waitLock;                               // protects activeTasks
-    condition_variable waitCV;                    // signals when all tasks are done
+    int activeTasks = 0;                      
+    mutex waitLock;                         
+    condition_variable waitCV;                    
+    
 
-    bool done = false;                            // set to true when shutting down
+    std::atomic<bool> done{false};     
 
     // Prevent copying
     ThreadPool(const ThreadPool&) = delete;

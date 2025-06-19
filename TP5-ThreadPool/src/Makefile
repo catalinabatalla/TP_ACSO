@@ -11,6 +11,10 @@ $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Clean up build artifacts
+custom:
+	$(CXX) $(CXXFLAGS) -o $(TARGET) thread-pool.cc Semaphore.cc test_custom.cc
+
+
 clean:
 	rm -f $(TARGET) $(OBJ)
 
