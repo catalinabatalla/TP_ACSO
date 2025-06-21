@@ -1,233 +1,233 @@
-==52783== Helgrind, a thread error detector
-==52783== Copyright (C) 2007-2017, and GNU GPL'd, by OpenWorks LLP et al.
-==52783== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
-==52783== Command: ./threadpool --all
-==52783== 
-[36m[B01][0m Basic execution (3 tasks on 2 threads)... ==52790== 
-==52790== Use --history-level=approx or =none to gain increased speed, at
-==52790== the cost of reduced accuracy of conflicting-access information
-==52790== For lists of detected and suppressed errors, rerun with: -s
-==52790== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 225 from 23)
+==20729== Helgrind, a thread error detector
+==20729== Copyright (C) 2007-2017, and GNU GPL'd, by OpenWorks LLP et al.
+==20729== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==20729== Command: ./threadpool --all
+==20729== 
+[36m[B01][0m Basic execution (3 tasks on 2 threads)... ==20730== 
+==20730== Use --history-level=approx or =none to gain increased speed, at
+==20730== the cost of reduced accuracy of conflicting-access information
+==20730== For lists of detected and suppressed errors, rerun with: -s
+==20730== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 233 from 23)
 [1;32m✅ PASSED[0m
-[36m[B02][0m Wait without scheduling... ==52794== 
-==52794== Use --history-level=approx or =none to gain increased speed, at
-==52794== the cost of reduced accuracy of conflicting-access information
-==52794== For lists of detected and suppressed errors, rerun with: -s
-==52794== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 103 from 17)
+[36m[B02][0m Wait without scheduling... ==20734== 
+==20734== Use --history-level=approx or =none to gain increased speed, at
+==20734== the cost of reduced accuracy of conflicting-access information
+==20734== For lists of detected and suppressed errors, rerun with: -s
+==20734== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 103 from 17)
 [1;32m✅ PASSED[0m
-[36m[B03][0m Serial execution with 1 thread... ==52800== 
-==52800== Use --history-level=approx or =none to gain increased speed, at
-==52800== the cost of reduced accuracy of conflicting-access information
-==52800== For lists of detected and suppressed errors, rerun with: -s
-==52800== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 964 from 23)
+[36m[B03][0m Serial execution with 1 thread... ==20740== 
+==20740== Use --history-level=approx or =none to gain increased speed, at
+==20740== the cost of reduced accuracy of conflicting-access information
+==20740== For lists of detected and suppressed errors, rerun with: -s
+==20740== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1162 from 23)
 [1;32m✅ PASSED[0m
-[36m[B04][0m FIFO execution in single-thread mode... ==52803== 
-==52803== Use --history-level=approx or =none to gain increased speed, at
-==52803== the cost of reduced accuracy of conflicting-access information
-==52803== For lists of detected and suppressed errors, rerun with: -s
-==52803== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1500 from 23)
+[36m[B04][0m FIFO execution in single-thread mode... ==20743== 
+==20743== Use --history-level=approx or =none to gain increased speed, at
+==20743== the cost of reduced accuracy of conflicting-access information
+==20743== For lists of detected and suppressed errors, rerun with: -s
+==20743== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1592 from 23)
 [1;32m✅ PASSED[0m
-[32m[C01][0m Stress with 1000 tasks... ==52806== 
-==52806== Use --history-level=approx or =none to gain increased speed, at
-==52806== the cost of reduced accuracy of conflicting-access information
-==52806== For lists of detected and suppressed errors, rerun with: -s
-==52806== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 53991 from 23)
+[32m[C01][0m Stress with 1000 tasks... ==20746== 
+==20746== Use --history-level=approx or =none to gain increased speed, at
+==20746== the cost of reduced accuracy of conflicting-access information
+==20746== For lists of detected and suppressed errors, rerun with: -s
+==20746== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 54476 from 23)
 [1;32m✅ PASSED[0m
-[32m[C02][0m Reusing the pool after wait... ==52816== 
-==52816== Use --history-level=approx or =none to gain increased speed, at
-==52816== the cost of reduced accuracy of conflicting-access information
-==52816== For lists of detected and suppressed errors, rerun with: -s
-==52816== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 207 from 24)
+[32m[C02][0m Reusing the pool after wait... ==20756== 
+==20756== Use --history-level=approx or =none to gain increased speed, at
+==20756== the cost of reduced accuracy of conflicting-access information
+==20756== For lists of detected and suppressed errors, rerun with: -s
+==20756== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 207 from 24)
 [1;32m✅ PASSED[0m
-[32m[C03][0m Multiple wait() calls... ==52822== 
-==52822== Use --history-level=approx or =none to gain increased speed, at
-==52822== the cost of reduced accuracy of conflicting-access information
-==52822== For lists of detected and suppressed errors, rerun with: -s
-==52822== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 151 from 23)
+[32m[C03][0m Multiple wait() calls... ==20762== 
+==20762== Use --history-level=approx or =none to gain increased speed, at
+==20762== the cost of reduced accuracy of conflicting-access information
+==20762== For lists of detected and suppressed errors, rerun with: -s
+==20762== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 151 from 23)
 [1;32m✅ PASSED[0m
-[35m[E01][0m Massive stress (10k tasks)... ==52828== 
-==52828== Use --history-level=approx or =none to gain increased speed, at
-==52828== the cost of reduced accuracy of conflicting-access information
-==52828== For lists of detected and suppressed errors, rerun with: -s
-==52828== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 539377 from 23)
+[35m[E01][0m Massive stress (10k tasks)... ==20768== 
+==20768== Use --history-level=approx or =none to gain increased speed, at
+==20768== the cost of reduced accuracy of conflicting-access information
+==20768== For lists of detected and suppressed errors, rerun with: -s
+==20768== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 540684 from 23)
 [1;32m✅ PASSED[0m
-[35m[E02][0m Long tasks then shutdown... ==52876== 
-==52876== Use --history-level=approx or =none to gain increased speed, at
-==52876== the cost of reduced accuracy of conflicting-access information
-==52876== For lists of detected and suppressed errors, rerun with: -s
-==52876== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 100193 from 23)
+[35m[E02][0m Long tasks then shutdown... ==20804== 
+==20804== Use --history-level=approx or =none to gain increased speed, at
+==20804== the cost of reduced accuracy of conflicting-access information
+==20804== For lists of detected and suppressed errors, rerun with: -s
+==20804== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 190076 from 23)
 [1;32m✅ PASSED[0m
-[35m[E03][0m Lots of short tasks on few threads... ==52882== 
-==52882== Use --history-level=approx or =none to gain increased speed, at
-==52882== the cost of reduced accuracy of conflicting-access information
-==52882== For lists of detected and suppressed errors, rerun with: -s
-==52882== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 259153 from 23)
+[35m[E03][0m Lots of short tasks on few threads... ==20810== 
+==20810== Use --history-level=approx or =none to gain increased speed, at
+==20810== the cost of reduced accuracy of conflicting-access information
+==20810== For lists of detected and suppressed errors, rerun with: -s
+==20810== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 159178 from 23)
 [1;32m✅ PASSED[0m
-[35m[E04][0m Detect potential deadlock... ==52898== ---Thread-Announcement------------------------------------------
-==52898== 
-==52898== Thread #2 was created
-==52898==    at 0x4C3DA23: clone (clone.S:76)
-==52898==    by 0x4C3DBA2: __clone_internal_fallback (clone-internal.c:64)
-==52898==    by 0x4C3DBA2: __clone_internal (clone-internal.c:109)
-==52898==    by 0x4BB054F: create_thread (pthread_create.c:297)
-==52898==    by 0x4BB11A4: pthread_create@@GLIBC_2.34 (pthread_create.c:836)
-==52898==    by 0x4854975: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
-==52898==    by 0x4954EB0: std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
-==52898==    by 0x11B218: std::thread::thread<test_potential_deadlock()::{lambda()#1}, , void>(test_potential_deadlock()::{lambda()#1}&&) (std_thread.h:164)
-==52898==    by 0x11548B: test_potential_deadlock() (test_custom.cc:280)
-==52898==    by 0x12FE70: bool std::__invoke_impl<bool, bool (*&)()>(std::__invoke_other, bool (*&)()) (invoke.h:61)
-==52898==    by 0x12EB11: std::enable_if<!std::is_void<bool>::value, bool>::type std::__invoke_r<bool, bool (*&)()>(bool (*&)()) (invoke.h:138)
-==52898==    by 0x12D1C1: std::_Function_handler<bool (), bool (*)()>::_M_invoke(std::_Any_data const&) (std_function.h:290)
-==52898==    by 0x12B085: std::function<bool ()>::operator()() const (std_function.h:591)
-==52898== 
-==52898== ----------------------------------------------------------------
-==52898== 
-==52898== Thread #2: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
-==52898==    at 0x4851C1D: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
-==52898==    by 0x11533C: test_potential_deadlock()::{lambda()#1}::operator()() const (test_custom.cc:274)
-==52898==    by 0x127FD3: void std::__invoke_impl<void, test_potential_deadlock()::{lambda()#1}>(std::__invoke_other, test_potential_deadlock()::{lambda()#1}&&) (invoke.h:61)
-==52898==    by 0x127CF7: std::__invoke_result<test_potential_deadlock()::{lambda()#1}>::type std::__invoke<test_potential_deadlock()::{lambda()#1}>(test_potential_deadlock()::{lambda()#1}&&) (invoke.h:96)
-==52898==    by 0x127913: void std::thread::_Invoker<std::tuple<test_potential_deadlock()::{lambda()#1}> >::_M_invoke<0ul>(std::_Index_tuple<0ul>) (std_thread.h:292)
-==52898==    by 0x127703: std::thread::_Invoker<std::tuple<test_potential_deadlock()::{lambda()#1}> >::operator()() (std_thread.h:299)
-==52898==    by 0x1275B3: std::thread::_State_impl<std::thread::_Invoker<std::tuple<test_potential_deadlock()::{lambda()#1}> > >::_M_run() (std_thread.h:244)
-==52898==    by 0x4954DB3: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
-==52898==    by 0x4854B7A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
-==52898==    by 0x4BB0AA3: start_thread (pthread_create.c:447)
-==52898==    by 0x4C3DA33: clone (clone.S:100)
-==52898== 
-==52898== 
-==52898== Use --history-level=approx or =none to gain increased speed, at
-==52898== the cost of reduced accuracy of conflicting-access information
-==52898== For lists of detected and suppressed errors, rerun with: -s
-==52898== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 122 from 30)
+[35m[E04][0m Detect potential deadlock... ==20814== ---Thread-Announcement------------------------------------------
+==20814== 
+==20814== Thread #2 was created
+==20814==    at 0x4C3DA23: clone (clone.S:76)
+==20814==    by 0x4C3DBA2: __clone_internal_fallback (clone-internal.c:64)
+==20814==    by 0x4C3DBA2: __clone_internal (clone-internal.c:109)
+==20814==    by 0x4BB054F: create_thread (pthread_create.c:297)
+==20814==    by 0x4BB11A4: pthread_create@@GLIBC_2.34 (pthread_create.c:836)
+==20814==    by 0x4854975: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==20814==    by 0x4954EB0: std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==20814==    by 0x11B218: std::thread::thread<test_potential_deadlock()::{lambda()#1}, , void>(test_potential_deadlock()::{lambda()#1}&&) (std_thread.h:164)
+==20814==    by 0x11548B: test_potential_deadlock() (test_custom.cc:280)
+==20814==    by 0x12FE70: bool std::__invoke_impl<bool, bool (*&)()>(std::__invoke_other, bool (*&)()) (invoke.h:61)
+==20814==    by 0x12EB11: std::enable_if<!std::is_void<bool>::value, bool>::type std::__invoke_r<bool, bool (*&)()>(bool (*&)()) (invoke.h:138)
+==20814==    by 0x12D1C1: std::_Function_handler<bool (), bool (*)()>::_M_invoke(std::_Any_data const&) (std_function.h:290)
+==20814==    by 0x12B085: std::function<bool ()>::operator()() const (std_function.h:591)
+==20814== 
+==20814== ----------------------------------------------------------------
+==20814== 
+==20814== Thread #2: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
+==20814==    at 0x4851C1D: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==20814==    by 0x11533C: test_potential_deadlock()::{lambda()#1}::operator()() const (test_custom.cc:274)
+==20814==    by 0x127FD3: void std::__invoke_impl<void, test_potential_deadlock()::{lambda()#1}>(std::__invoke_other, test_potential_deadlock()::{lambda()#1}&&) (invoke.h:61)
+==20814==    by 0x127CF7: std::__invoke_result<test_potential_deadlock()::{lambda()#1}>::type std::__invoke<test_potential_deadlock()::{lambda()#1}>(test_potential_deadlock()::{lambda()#1}&&) (invoke.h:96)
+==20814==    by 0x127913: void std::thread::_Invoker<std::tuple<test_potential_deadlock()::{lambda()#1}> >::_M_invoke<0ul>(std::_Index_tuple<0ul>) (std_thread.h:292)
+==20814==    by 0x127703: std::thread::_Invoker<std::tuple<test_potential_deadlock()::{lambda()#1}> >::operator()() (std_thread.h:299)
+==20814==    by 0x1275B3: std::thread::_State_impl<std::thread::_Invoker<std::tuple<test_potential_deadlock()::{lambda()#1}> > >::_M_run() (std_thread.h:244)
+==20814==    by 0x4954DB3: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33)
+==20814==    by 0x4854B7A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==20814==    by 0x4BB0AA3: start_thread (pthread_create.c:447)
+==20814==    by 0x4C3DA33: clone (clone.S:100)
+==20814== 
+==20814== 
+==20814== Use --history-level=approx or =none to gain increased speed, at
+==20814== the cost of reduced accuracy of conflicting-access information
+==20814== For lists of detected and suppressed errors, rerun with: -s
+==20814== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 122 from 30)
 [1;31m❌ FAILED[0m
-[35m[E05][0m Simulated pendingTasks tracking... ==52903== 
-==52903== Use --history-level=approx or =none to gain increased speed, at
-==52903== the cost of reduced accuracy of conflicting-access information
-==52903== For lists of detected and suppressed errors, rerun with: -s
-==52903== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 161707 from 23)
+[35m[E05][0m Simulated pendingTasks tracking... ==20825== 
+==20825== Use --history-level=approx or =none to gain increased speed, at
+==20825== the cost of reduced accuracy of conflicting-access information
+==20825== For lists of detected and suppressed errors, rerun with: -s
+==20825== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 90129 from 23)
 [1;32m✅ PASSED[0m
-[34m[F01][0m Schedule from multiple threads... ==52909== 
-==52909== Use --history-level=approx or =none to gain increased speed, at
-==52909== the cost of reduced accuracy of conflicting-access information
-==52909== For lists of detected and suppressed errors, rerun with: -s
-==52909== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 111158 from 24)
+[34m[F01][0m Schedule from multiple threads... ==20831== 
+==20831== Use --history-level=approx or =none to gain increased speed, at
+==20831== the cost of reduced accuracy of conflicting-access information
+==20831== For lists of detected and suppressed errors, rerun with: -s
+==20831== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 112333 from 24)
 [1;32m✅ PASSED[0m
-[34m[F02][0m Schedule after destruction (invalid use)... ==52929== 
-==52929== Use --history-level=approx or =none to gain increased speed, at
-==52929== the cost of reduced accuracy of conflicting-access information
-==52929== For lists of detected and suppressed errors, rerun with: -s
-==52929== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 104 from 23)
+[34m[F02][0m Schedule after destruction (invalid use)... ==20845== 
+==20845== Use --history-level=approx or =none to gain increased speed, at
+==20845== the cost of reduced accuracy of conflicting-access information
+==20845== For lists of detected and suppressed errors, rerun with: -s
+==20845== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 104 from 23)
 [1;32m✅ PASSED[0m
-[34m[F03][0m Schedule inside another task... ==52933== 
-==52933== Use --history-level=approx or =none to gain increased speed, at
-==52933== the cost of reduced accuracy of conflicting-access information
-==52933== For lists of detected and suppressed errors, rerun with: -s
-==52933== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 210 from 19)
+[34m[F03][0m Schedule inside another task... ==20849== 
+==20849== Use --history-level=approx or =none to gain increased speed, at
+==20849== the cost of reduced accuracy of conflicting-access information
+==20849== For lists of detected and suppressed errors, rerun with: -s
+==20849== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 210 from 19)
 [1;32m✅ PASSED[0m
-[34m[F04][0m Wait blocks until all tasks finish... ==52939== 
-==52939== Use --history-level=approx or =none to gain increased speed, at
-==52939== the cost of reduced accuracy of conflicting-access information
-==52939== For lists of detected and suppressed errors, rerun with: -s
-==52939== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 104 from 23)
+[34m[F04][0m Wait blocks until all tasks finish... ==20855== 
+==20855== Use --history-level=approx or =none to gain increased speed, at
+==20855== the cost of reduced accuracy of conflicting-access information
+==20855== For lists of detected and suppressed errors, rerun with: -s
+==20855== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 104 from 23)
 [1;32m✅ PASSED[0m
-[34m[F06][0m Many waits in parallel... ==52949== 
-==52949== Use --history-level=approx or =none to gain increased speed, at
-==52949== the cost of reduced accuracy of conflicting-access information
-==52949== For lists of detected and suppressed errors, rerun with: -s
-==52949== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 75671 from 23)
+[34m[F06][0m Many waits in parallel... ==20865== 
+==20865== Use --history-level=approx or =none to gain increased speed, at
+==20865== the cost of reduced accuracy of conflicting-access information
+==20865== For lists of detected and suppressed errors, rerun with: -s
+==20865== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 67610 from 23)
 [1;32m✅ PASSED[0m
-[34m[F07][0m High contention on atomic counter... ==52960== 
-==52960== Use --history-level=approx or =none to gain increased speed, at
-==52960== the cost of reduced accuracy of conflicting-access information
-==52960== For lists of detected and suppressed errors, rerun with: -s
-==52960== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 56229 from 23)
+[34m[F07][0m High contention on atomic counter... ==20876== 
+==20876== Use --history-level=approx or =none to gain increased speed, at
+==20876== the cost of reduced accuracy of conflicting-access information
+==20876== For lists of detected and suppressed errors, rerun with: -s
+==20876== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 54345 from 23)
 [1;32m✅ PASSED[0m
-[34m[F08][0m Destroy pool immediately after scheduling... ==52972== 
-==52972== Use --history-level=approx or =none to gain increased speed, at
-==52972== the cost of reduced accuracy of conflicting-access information
-==52972== For lists of detected and suppressed errors, rerun with: -s
-==52972== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 41760 from 23)
+[34m[F08][0m Destroy pool immediately after scheduling... ==20882== 
+==20882== Use --history-level=approx or =none to gain increased speed, at
+==20882== the cost of reduced accuracy of conflicting-access information
+==20882== For lists of detected and suppressed errors, rerun with: -s
+==20882== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 83451 from 23)
 [1;32m✅ PASSED[0m
-[34m[F09][0m Interleaved schedule/wait execution... ==52976== 
-==52976== Use --history-level=approx or =none to gain increased speed, at
-==52976== the cost of reduced accuracy of conflicting-access information
-==52976== For lists of detected and suppressed errors, rerun with: -s
-==52976== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 46948 from 28)
+[34m[F09][0m Interleaved schedule/wait execution... ==20886== 
+==20886== Use --history-level=approx or =none to gain increased speed, at
+==20886== the cost of reduced accuracy of conflicting-access information
+==20886== For lists of detected and suppressed errors, rerun with: -s
+==20886== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 27736 from 28)
 [1;32m✅ PASSED[0m
-[34m[F10][0m Multiple schedule/wait rounds... ==52981== 
-==52981== Use --history-level=approx or =none to gain increased speed, at
-==52981== the cost of reduced accuracy of conflicting-access information
-==52981== For lists of detected and suppressed errors, rerun with: -s
-==52981== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+[34m[F10][0m Multiple schedule/wait rounds... ==20891== 
+==20891== Use --history-level=approx or =none to gain increased speed, at
+==20891== the cost of reduced accuracy of conflicting-access information
+==20891== For lists of detected and suppressed errors, rerun with: -s
+==20891== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 [1;32m✅ PASSED[0m
-[34m[F11][0m Multiple wait() calls inside tasks... ==52982== 
-==52982== Use --history-level=approx or =none to gain increased speed, at
-==52982== the cost of reduced accuracy of conflicting-access information
-==52982== For lists of detected and suppressed errors, rerun with: -s
-==52982== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+[34m[F11][0m Multiple wait() calls inside tasks... ==20892== 
+==20892== Use --history-level=approx or =none to gain increased speed, at
+==20892== the cost of reduced accuracy of conflicting-access information
+==20892== For lists of detected and suppressed errors, rerun with: -s
+==20892== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 [1;32m✅ PASSED[0m
-[34m[F12][0m Concurrent schedule/wait in parallel... ==52983== 
-==52983== Use --history-level=approx or =none to gain increased speed, at
-==52983== the cost of reduced accuracy of conflicting-access information
-==52983== For lists of detected and suppressed errors, rerun with: -s
-==52983== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 175798 from 24)
+[34m[F12][0m Concurrent schedule/wait in parallel... ==20893== 
+==20893== Use --history-level=approx or =none to gain increased speed, at
+==20893== the cost of reduced accuracy of conflicting-access information
+==20893== For lists of detected and suppressed errors, rerun with: -s
+==20893== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 90070 from 24)
 [1;32m✅ PASSED[0m
-[31m[H01][0m Wait inside task should deadlock... ==53001== 
-==53001== Use --history-level=approx or =none to gain increased speed, at
-==53001== the cost of reduced accuracy of conflicting-access information
-==53001== For lists of detected and suppressed errors, rerun with: -s
-==53001== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+[31m[H01][0m Wait inside task should deadlock... ==20905== 
+==20905== Use --history-level=approx or =none to gain increased speed, at
+==20905== the cost of reduced accuracy of conflicting-access information
+==20905== For lists of detected and suppressed errors, rerun with: -s
+==20905== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 [1;32m✅ PASSED[0m
-[33m[L01][0m Destructor waits for tasks completion... ==53002== 
-==53002== Use --history-level=approx or =none to gain increased speed, at
-==53002== the cost of reduced accuracy of conflicting-access information
-==53002== For lists of detected and suppressed errors, rerun with: -s
-==53002== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 79 from 23)
+[33m[L01][0m Destructor waits for tasks completion... ==20906== 
+==20906== Use --history-level=approx or =none to gain increased speed, at
+==20906== the cost of reduced accuracy of conflicting-access information
+==20906== For lists of detected and suppressed errors, rerun with: -s
+==20906== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 79 from 23)
 [1;32m✅ PASSED[0m
-[33m[L02][0m Repeated pool creation and destruction... ==53005== 
-==53005== Use --history-level=approx or =none to gain increased speed, at
-==53005== the cost of reduced accuracy of conflicting-access information
-==53005== For lists of detected and suppressed errors, rerun with: -s
-==53005== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 61414 from 23)
+[33m[L02][0m Repeated pool creation and destruction... ==20915== 
+==20915== Use --history-level=approx or =none to gain increased speed, at
+==20915== the cost of reduced accuracy of conflicting-access information
+==20915== For lists of detected and suppressed errors, rerun with: -s
+==20915== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 65887 from 23)
 [1;32m✅ PASSED[0m
-[91m[M01][0m Schedule nullptr function... ==53312== 
-==53312== Use --history-level=approx or =none to gain increased speed, at
-==53312== the cost of reduced accuracy of conflicting-access information
-==53312== For lists of detected and suppressed errors, rerun with: -s
-==53312== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 58 from 17)
+[91m[M01][0m Schedule nullptr function... ==21216== 
+==21216== Use --history-level=approx or =none to gain increased speed, at
+==21216== the cost of reduced accuracy of conflicting-access information
+==21216== For lists of detected and suppressed errors, rerun with: -s
+==21216== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 58 from 17)
 [1;32m✅ PASSED[0m
-[91m[M02][0m wait() during infinite rescheduling... ==53316== 
-==53316== Use --history-level=approx or =none to gain increased speed, at
-==53316== the cost of reduced accuracy of conflicting-access information
-==53316== For lists of detected and suppressed errors, rerun with: -s
-==53316== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+[91m[M02][0m wait() during infinite rescheduling... ==21220== 
+==21220== Use --history-level=approx or =none to gain increased speed, at
+==21220== the cost of reduced accuracy of conflicting-access information
+==21220== For lists of detected and suppressed errors, rerun with: -s
+==21220== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 [1;32m✅ PASSED[0m
-[96m[N01][0m Deep nested task scheduling... ==53317== 
-==53317== Use --history-level=approx or =none to gain increased speed, at
-==53317== the cost of reduced accuracy of conflicting-access information
-==53317== For lists of detected and suppressed errors, rerun with: -s
-==53317== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 250 from 32)
+[96m[N01][0m Deep nested task scheduling... ==21221== 
+==21221== Use --history-level=approx or =none to gain increased speed, at
+==21221== the cost of reduced accuracy of conflicting-access information
+==21221== For lists of detected and suppressed errors, rerun with: -s
+==21221== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 250 from 32)
 [1;32m✅ PASSED[0m
-[96m[N02][0m Extreme nested scheduling (1000)... ==53324== 
-==53324== Use --history-level=approx or =none to gain increased speed, at
-==53324== the cost of reduced accuracy of conflicting-access information
-==53324== For lists of detected and suppressed errors, rerun with: -s
-==53324== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 53656 from 30)
+[96m[N02][0m Extreme nested scheduling (1000)... ==21228== 
+==21228== Use --history-level=approx or =none to gain increased speed, at
+==21228== the cost of reduced accuracy of conflicting-access information
+==21228== For lists of detected and suppressed errors, rerun with: -s
+==21228== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 49107 from 30)
 [1;32m✅ PASSED[0m
-[95m[T01][0m Parallel speedup benchmark (4 tasks)... ==53337== 
-==53337== Use --history-level=approx or =none to gain increased speed, at
-==53337== the cost of reduced accuracy of conflicting-access information
-==53337== For lists of detected and suppressed errors, rerun with: -s
-==53337== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 265 from 23)
+[95m[T01][0m Parallel speedup benchmark (4 tasks)... ==21241== 
+==21241== Use --history-level=approx or =none to gain increased speed, at
+==21241== the cost of reduced accuracy of conflicting-access information
+==21241== For lists of detected and suppressed errors, rerun with: -s
+==21241== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 286 from 23)
 [1;32m✅ PASSED[0m
 
 ========================================
 Ran 31 tests.
 ❌ SOME TESTS FAILED
 ========================================
-==52783== 
-==52783== Use --history-level=approx or =none to gain increased speed, at
-==52783== the cost of reduced accuracy of conflicting-access information
-==52783== For lists of detected and suppressed errors, rerun with: -s
-==52783== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==20729== 
+==20729== Use --history-level=approx or =none to gain increased speed, at
+==20729== the cost of reduced accuracy of conflicting-access information
+==20729== For lists of detected and suppressed errors, rerun with: -s
+==20729== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
