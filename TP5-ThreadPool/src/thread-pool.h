@@ -60,7 +60,6 @@ class ThreadPool {
 
     std::atomic<bool> done{false};     
 
-    // Prevent copying
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
 };

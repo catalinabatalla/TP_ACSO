@@ -65,7 +65,8 @@ void ThreadPool::dispatcher() {
 
             if (done) break;
 
-            // Ahora que tengo worker disponible, saco la tarea
+            // Ahora que tengo worker disponible, saco la tarea, esto significa que
+            // puedo asignar la tarea al worker y notificarlo
             task = taskQueue.front();
             taskQueue.pop();
 
@@ -74,7 +75,7 @@ void ThreadPool::dispatcher() {
         } // fin lock queueLock
 
         {
-            // Asigno la tarea al worker con su mutex propio
+            // Asigno la tarea al worker con su mutex propio y desbloqueo
             unique_lock<mutex> lk(availableWorker->mtx);
             availableWorker->thunk = task;
         }
@@ -114,7 +115,7 @@ void ThreadPool::worker(size_t id) {
     }
 }
 
-void ThreadPool::wait() {
+void ThreadPool::wait() { // esoero para que los threads terminen
     unique_lock<mutex> lk(queueLock);
     waitCV.wait(lk, [this]() {
         return taskQueue.empty() && activeTasks == 0;
